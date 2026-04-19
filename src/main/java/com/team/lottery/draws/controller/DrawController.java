@@ -1,12 +1,13 @@
 package com.team.lottery.draws.controller;
 
 import com.team.lottery.draws.dto.DrawResponse;
+import com.team.lottery.draws.dto.DrawResultResponse;
 import com.team.lottery.draws.mapper.DrawMapper;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.common.errors.NotFoundException;
-import io.javalin.Javalin;
+import io.javalin.config.RoutesConfig;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,8 +26,8 @@ public class DrawController {
         this.drawService = drawService;
     }
 
-    public void registerRoutes(Javalin app) {
-        app.get("/api/v1/draws", ctx -> {
+    public void registerRoutes(RoutesConfig routes) {
+        routes.get("/api/v1/draws", ctx -> {
             String statusParam = ctx.queryParam("status");
 
             List<Draw> draws;
@@ -44,7 +45,7 @@ public class DrawController {
             ctx.json(response);
         });
 
-        app.get("/api/v1/draws/{id}", ctx -> {
+       routes.get("/api/v1/draws/{id}", ctx -> {
             Long drawId = Long.valueOf(ctx.pathParam("id"));
 
             Draw draw = drawService.getDrawById(drawId)
@@ -52,5 +53,15 @@ public class DrawController {
 
             ctx.json(DrawMapper.toResponse(draw));
         });
+
+       routes.get("/api/v1/draws/{id}/result", ctx -> {
+            Long drawId = Long.valueOf(ctx.pathParam("id"));
+
+           DrawResultResponse response = drawService.getDrawResultByDrawId(drawId)
+                   .map(DrawMapper::toResultResponse)
+                   .orElseThrow(() -> new NotFoundException("Draw result not found for draw id: " + drawId));
+
+           ctx.json(response);
+       });
     }
 }

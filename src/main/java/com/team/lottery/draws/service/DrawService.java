@@ -1,12 +1,16 @@
 package com.team.lottery.draws.service;
 
+import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.NotFoundException;
 import com.team.lottery.common.validation.Validators;
 import com.team.lottery.draws.dto.CreateDrawRequest;
 import com.team.lottery.draws.model.Draw;
+import com.team.lottery.draws.model.DrawResult;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
+import com.team.lottery.draws.repository.DrawResultRepository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,9 +27,11 @@ import java.util.Optional;
 
 public class DrawService {
     private final DrawRepository drawRepository;
+    private final DrawResultRepository drawResultRepository;
 
-    public DrawService(DrawRepository drawRepository) {
+    public DrawService(DrawRepository drawRepository, DrawResultRepository drawResultRepository) {
         this.drawRepository = drawRepository;
+        this.drawResultRepository = drawResultRepository;
     }
 
     /**
@@ -72,6 +78,18 @@ public class DrawService {
     public void runDraw(Long drawId) {
         Draw draw = drawRepository.findById(drawId).
                 orElseThrow(() -> new NotFoundException("Draw not found with id: " + drawId));
+
+        if (draw.getStatus() != DrawStatus.CLOSED) {
+            throw new ConflictException("Draw must be CLOSED to run");
+        }
+
+        updateDrawStatus(drawId, DrawStatus.COMPLETED);
+
+        DrawResult drawResult = new DrawResult();
+        drawResult.setDrawId(drawId);
+        drawResult.setDrawnAt(OffsetDateTime.now());
+
+        drawResultRepository.save(drawResult);
     }
 
     public List<Draw> getAllDraws() {
@@ -91,6 +109,10 @@ public class DrawService {
 
     public Optional<Draw> getDrawById(Long id) {
         return drawRepository.findById(id);
+    }
+
+    public Optional<DrawResult> getDrawResultByDrawId(Long drawId) {
+        return drawResultRepository.findByDrawId(drawId);
     }
 
     public void updateDrawStatus(Long drawId, DrawStatus status) {

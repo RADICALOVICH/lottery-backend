@@ -5,6 +5,9 @@ import com.team.lottery.config.DatabaseConfig;
 import com.team.lottery.config.JavalinConfig;
 import com.team.lottery.draws.controller.AdminDrawController;
 import com.team.lottery.draws.controller.DrawController;
+import com.team.lottery.draws.dto.CreateDrawRequest;
+import com.team.lottery.draws.model.Draw;
+import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
 import com.team.lottery.draws.repository.InMemoryDrawRepository;
 import com.team.lottery.draws.service.DrawService;
@@ -12,6 +15,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.team.lottery.draws.repository.DrawResultRepository;
+import com.team.lottery.draws.repository.InMemoryDrawResultRepository;
 
 import javax.sql.DataSource;
 
@@ -30,15 +35,16 @@ public final class Application {
         AppConfig cfg = AppConfig.load();
         DataSource ds = DatabaseConfig.init(cfg);
 
-        Javalin app = JavalinConfig.create(cfg.port());
-
         DrawRepository drawRepository = new InMemoryDrawRepository();
-        DrawService drawService = new DrawService(drawRepository);
+        DrawResultRepository drawResultRepository = new InMemoryDrawResultRepository();
+        DrawService drawService = new DrawService(drawRepository, drawResultRepository);
         DrawController drawController = new DrawController(drawService);
         AdminDrawController adminDrawController = new AdminDrawController(drawService);
 
-        drawController.registerRoutes(app);
-        adminDrawController.registerRoutes(app);
+        Javalin app = JavalinConfig.create(cfg.port(), routes -> {
+            drawController.registerRoutes(routes);
+            adminDrawController.registerRoutes(routes);
+        });
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down...");

@@ -5,8 +5,8 @@ import com.team.lottery.draws.dto.DrawResponse;
 import com.team.lottery.draws.mapper.DrawMapper;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.service.DrawService;
-import io.javalin.Javalin;
-
+import io.javalin.config.RoutesConfig;
+import io.javalin.http.Context;
 
 public class AdminDrawController {
     private final DrawService drawService;
@@ -15,12 +15,11 @@ public class AdminDrawController {
         this.drawService = drawService;
     }
 
-    public void registerRoutes(Javalin app) {
-        app.post("/admin/draws", ctx -> {
+    public void registerRoutes(RoutesConfig routes) {
+        routes.post("/admin/draws", ctx -> {
             CreateDrawRequest request = ctx.bodyAsClass(CreateDrawRequest.class);
 
-            // Временная заглушка до появления auth/security
-            long adminId = 1L;
+            long adminId = requireAdminId(ctx);
 
             Draw createdDraw = drawService.createDraw(request, adminId);
 
@@ -30,9 +29,16 @@ public class AdminDrawController {
             ctx.json(response);
         });
 
-        app.post("/admin/draws/{id}/run-draw", ctx -> {
+        routes.post("/admin/draws/{id}/run-draw", ctx -> {
+            requireAdminId(ctx);
+
             Long drawId = Long.valueOf(ctx.pathParam("id"));
             drawService.runDraw(drawId);
         });
+    }
+
+    private Long requireAdminId(Context ctx) {
+        // TODO: заменить на реальную аутентификацию/авторизацию
+        return 1L; // заглушка для идентификатора администратора
     }
 }
