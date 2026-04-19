@@ -1,38 +1,35 @@
 package com.team.lottery.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.team.lottery.common.errors.ErrorHandler;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
 
+import java.util.Map;
+
 /**
- * Фабрика готового Javalin:
- *   - Jackson с поддержкой java.time (Instant и т.п.), даты — в ISO-строку.
- *   - Подключён ErrorHandler: ApiException → HTTP-код + ErrorResponse.
- *
- * Роуты тут не регистрируем — это делают Application / Wiring.
+ * Factory for configured Javalin instance.
  */
 public final class JavalinConfig {
 
     private JavalinConfig() {
     }
 
-    public static Javalin create() {
-        ObjectMapper mapper = buildObjectMapper();
+    public static Javalin create(int port) {
+        return Javalin.create(config -> {
+            config.jetty.port = port;
 
-        Javalin app = Javalin.create(cfg -> {
-            cfg.jsonMapper(new JavalinJackson(mapper, true));
+            config.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
+                mapper.registerModule(new JavaTimeModule());
+                mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            }));
+
+            config.routes.get("/health", ctx ->
+                    ctx.json(Map.of("status", "ok"))
+            );
+
+            ErrorHandler.register(config);
         });
-
-        ErrorHandler.register(app);
-        return app;
-    }
-
-    private static ObjectMapper buildObjectMapper() {
-        return new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 }

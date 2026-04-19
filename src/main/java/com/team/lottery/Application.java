@@ -9,18 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.util.Map;
 
 /**
- * Точка входа приложения.
- *
- * Порядок старта:
- *   1. AppConfig — читаем конфигурацию (properties + ENV).
- *   2. DatabaseConfig — поднимаем Hikari-пул и накатываем миграции Flyway.
- *   3. JavalinConfig — создаём HTTP-сервер с Jackson и ErrorHandler.
- *   4. Регистрируем роуты и запускаем сервер на cfg.port().
- *
- * Wiring (Composition Root) подключим, когда появятся репозитории и сервисы.
+ * Application entry point.
  */
 public final class Application {
 
@@ -32,19 +23,19 @@ public final class Application {
     public static void main(String[] args) {
         AppConfig cfg = AppConfig.load();
         DataSource ds = DatabaseConfig.init(cfg);
-
-        Javalin app = JavalinConfig.create();
-        app.get("/health", ctx -> ctx.json(Map.of("status", "ok")));
-
-        app.start(cfg.port());
-        log.info("Application started on port {}", cfg.port());
+        //DataSource ds = null; //work without docker
+        Javalin app = JavalinConfig.create(cfg.port());
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down...");
             app.stop();
+
             if (ds instanceof HikariDataSource hds) {
                 hds.close();
             }
         }, "app-shutdown"));
+
+        app.start();
+        log.info("Application started on port {}", cfg.port());
     }
 }

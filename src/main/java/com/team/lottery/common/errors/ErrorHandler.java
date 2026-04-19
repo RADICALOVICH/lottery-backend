@@ -1,14 +1,14 @@
 package com.team.lottery.common.errors;
 
-import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Регистрация обработчиков исключений в Javalin.
+ * Registration of exception handlers for Javalin.
  *
- * ApiException (и все его наследники) → 4xx-ответ с единым ErrorResponse.
- * Всё остальное → 500 INTERNAL_ERROR, детали в лог, клиенту — общее сообщение.
+ * ApiException (and its subclasses) -> 4xx response with unified ErrorResponse.
+ * Everything else -> 500 INTERNAL_ERROR, details in logs, generic message to client.
  */
 public final class ErrorHandler {
 
@@ -17,13 +17,18 @@ public final class ErrorHandler {
     private ErrorHandler() {
     }
 
-    public static void register(Javalin app) {
-        app.exception(ApiException.class, (e, ctx) -> {
-            log.warn("API error: status={} code={} message={}", e.getStatusCode(), e.getCode(), e.getMessage());
+    public static void register(JavalinConfig config) {
+        config.routes.exception(ApiException.class, (e, ctx) -> {
+            log.warn(
+                    "API error: status={} code={} message={}",
+                    e.getStatusCode(),
+                    e.getCode(),
+                    e.getMessage()
+            );
             ctx.status(e.getStatusCode()).json(ErrorResponse.of(e));
         });
 
-        app.exception(Exception.class, (e, ctx) -> {
+        config.routes.exception(Exception.class, (e, ctx) -> {
             log.error("Unhandled exception on {} {}", ctx.method(), ctx.path(), e);
             ctx.status(500).json(new ErrorResponse("INTERNAL_ERROR", "Internal server error"));
         });
