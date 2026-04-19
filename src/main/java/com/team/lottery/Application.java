@@ -3,6 +3,11 @@ package com.team.lottery;
 import com.team.lottery.config.AppConfig;
 import com.team.lottery.config.DatabaseConfig;
 import com.team.lottery.config.JavalinConfig;
+import com.team.lottery.draws.controller.AdminDrawController;
+import com.team.lottery.draws.controller.DrawController;
+import com.team.lottery.draws.repository.DrawRepository;
+import com.team.lottery.draws.repository.InMemoryDrawRepository;
+import com.team.lottery.draws.service.DrawService;
 import com.zaxxer.hikari.HikariDataSource;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
@@ -36,6 +41,14 @@ public final class Application {
         Javalin app = JavalinConfig.create();
         app.get("/health", ctx -> ctx.json(Map.of("status", "ok")));
 
+        DrawRepository drawRepository = new InMemoryDrawRepository();
+        DrawService drawService = new DrawService(drawRepository);
+        DrawController drawController = new DrawController(drawService);
+        AdminDrawController adminDrawController = new AdminDrawController(drawService);
+
+        drawController.registerRoutes(app);
+        adminDrawController.registerRoutes(app);
+
         app.start(cfg.port());
         log.info("Application started on port {}", cfg.port());
 
@@ -46,5 +59,6 @@ public final class Application {
                 hds.close();
             }
         }, "app-shutdown"));
+
     }
 }
