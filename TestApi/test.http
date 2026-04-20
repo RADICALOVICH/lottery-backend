@@ -1,0 +1,301 @@
+###------------ HEALTH------------ ###
+
+# @name health
+GET http://localhost:8080/health
+
+###
+
+# @name healthDb
+GET http://localhost:8080/health/db
+
+###--------------------------------------- ###
+
+###------------ REGISTER------------ ###
+###
+# @name registerVolodya
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "volodya",
+  "password": "123456789"
+}
+
+###
+# @name registerIvan
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan",
+  "password": "12345678"
+}
+
+###
+# @name registerAndrey
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "andrey",
+  "password": "1234567891"
+}
+###
+# @name registerAdmin
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+"login": "admin",
+"password": "123456789"
+}
+
+###--------------------------------------- ###
+
+###------------ REGISTER FAILURES------------ ###
+###
+
+# @name registerEmptyLogin
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "",
+  "password": "123456"
+}
+
+###
+# @name registerEmptyPassword
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan2",
+  "password": ""
+}
+
+###
+# @name registerBadPassword
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan3",
+  "password": "1234"
+}
+
+###
+# @name registerDuplicateIvan
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan",
+  "password": "12345678"
+}
+
+###
+# @name registerShortLogin
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ab",
+  "password": "12345678"
+}
+
+###
+# @name registerLoginWithSpace
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan petrov",
+  "password": "12345678"
+}
+
+###
+# @name registerLoginBadChars
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan@petrov",
+  "password": "12345678"
+}
+
+###
+# @name registerNullLogin
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": null,
+  "password": "12345678"
+}
+
+###
+# @name registerNullPassword
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "user123",
+  "password": null
+}
+
+
+
+###--------------------------------------- ###
+
+###------------ LOGIN------------ ###
+###
+# @name loginIvan
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "login": "ivan",
+  "password": "12345678"
+}
+
+###
+# @name loginAndrey
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+"login": "andrey",
+"password": "1234567891"
+}
+
+
+###
+# @name  loginAdmin
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "login": "admin",
+  "password": "123456789"
+}
+
+###
+# @name loginVolodya
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+"login": "volodya",
+"password": "123456789"
+}
+###--------------------------------------- ###
+
+###------------ LOGIN WROMG------------ ###
+
+###
+# @name loginwrongpassword
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "login": "ivan",
+  "password": "wrong-password"
+}
+
+###
+# @name loginwrongname
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "login": "ivan2",
+  "password": "123456789"
+}
+
+###
+# @name loginEmpty
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "login": "",
+  "password": "123456789"
+}
+
+###
+# @name passwordEmpty
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "login": "admin",
+  "password": ""
+}
+
+###
+# @name adminloginFail
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+  "login": "admin",
+  "password": "1234567"
+}
+
+###--------------------------------------- ###
+
+###------------ INFORMATION------------ ###
+###
+# @name me
+GET http://localhost:8080/users/me
+Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
+
+###
+# @name me
+GET http://localhost:8080/users/me
+Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
+
+###
+# @name checkAdmin
+GET http://localhost:8080/admin/ping
+Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
+
+###--------------------------------------- ###
+
+###------------ INFORMATION WRONG------------ ###
+###
+# @name meWithoutAuth
+GET http://localhost:8080/users/me
+
+###
+# @name meBadToken
+GET http://localhost:8080/users/me
+Authorization: Bearer wrong-token
+
+###
+# @name meBadHeader
+GET http://localhost:8080/users/me
+Authorization: Basic 123
+
+###--------------------------------------- ###
+
+###------------ LOGOUT------------ ###
+###
+# @name logout
+POST http://localhost:8080/auth/logout
+Authorization: Bearer 70467126-d043-469d-a812-0a5ab064d676
+
+###--------------------------------------- ###
+
+###------------ ADDITIONAL FEATURES------------ ###
+###
+# @name getAllusers
+GET http://localhost:8080/users
+Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
+
+###
+
+# @name getAllLoginUsers
+GET http://localhost:8080/admin/logged-in-users
+Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
