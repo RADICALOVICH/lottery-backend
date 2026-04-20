@@ -83,6 +83,14 @@ public class DrawService {
             throw new ConflictException("Draw must be CLOSED to run");
         }
 
+        // TODO: после подключения ticket-блока:
+        // 1) проверить, есть ли SOLD билеты у тиража;
+        // 2) если SOLD билетов нет - обработать тираж как несостоявшийся;
+        // 3) выбрать winningTicketId;
+        // 4) всем SOLD билетам поставить LOSE;
+        // 5) выигрышному билету поставить WIN;
+        // 6) сохранить DrawResult уже с winningTicketId
+
         updateDrawStatus(drawId, DrawStatus.COMPLETED);
 
         DrawResult drawResult = new DrawResult();

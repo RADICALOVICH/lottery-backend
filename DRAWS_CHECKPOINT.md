@@ -53,7 +53,7 @@
 - заполнение `winningTicketId`
 - массовая простановка `LOSE` всем SOLD билетам
 - проставка `WIN` победителю
-- реальная аутентификация и проверка роли admin
+- в `runDraw(...)` зафиксирован TODO под ticket-интеграцию: проверка SOLD-билетов, обработка несостоявшегося тиража, выбор `winningTicketId` и простановка `WIN/LOSE`
 - JDBC/PostgreSQL подключение `DrawResultRepository` в рабочий поток
 - JDBC/PostgreSQL реализация для draw-блока целиком
 - scheduler
@@ -66,6 +66,7 @@
 - `JdbcDrawResultRepository` уже создан и компилируется, но пока не подключается в рабочий поток
 - причина: в БД `winning_ticket_id` объявлен как `NOT NULL`, а ticket-блок еще не подключен и `winningTicketId` пока не заполняется
 - в общий `main` изменения по `Application` / `JavalinConfig` нельзя вливать отдельно без draw-блока целиком
+- в `runDraw(...)` уже отмечена точка будущей интеграции с ticket-блоком, чтобы не потерять следующую доработку
 
 ## Последний зафиксированный коммит
 - `feat(draws): add draw result flow and prepare auth/jdbc integration`
