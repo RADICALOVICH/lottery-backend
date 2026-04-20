@@ -40,23 +40,31 @@ public final class AuthUtil {
             UserRepository userRepository
     ) throws SQLException {
         String token = extractToken(ctx);
-
-        Long userId = tokenService.getUserIdByToken(token);
-        if (userId == null) {
-            throw new UnauthorizedException("Invalid or expired token");
-        }
-
-        UserResponse user = userRepository.findById(userId);
-        if (user == null) {
-            throw new UnauthorizedException("User not found");
-        }
-
-        return user;
+        return requireUserByToken(token, tokenService, userRepository);
     }
 
     public static void requireAdmin(UserResponse user) {
         if (!"ADMIN".equals(user.getRole())) {
             throw new ForbiddenException("Access denied");
         }
+    }
+    public static UserResponse requireUserByToken(
+            String token,
+            TokenService tokenService,
+            UserRepository userRepository
+    ) throws SQLException {
+        Long userId = tokenService.getUserIdByToken(token);
+
+        if (userId == null) {
+            throw new UnauthorizedException("Invalid or expired token");
+        }
+
+        UserResponse user = userRepository.findById(userId);
+
+        if (user == null) {
+            throw new UnauthorizedException("User not found");
+        }
+
+        return user;
     }
 }

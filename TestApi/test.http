@@ -284,7 +284,7 @@ Authorization: Basic 123
 ###
 # @name logout
 POST http://localhost:8080/auth/logout
-Authorization: Bearer 70467126-d043-469d-a812-0a5ab064d676
+Authorization: Bearer c4ce5876-81ac-4c76-9ec0-f39c7f088837
 
 ###--------------------------------------- ###
 
@@ -298,4 +298,4 @@ Authorization: Bearer b28edd8c-28c3-4907-a48c-785c5c373476
 
 # @name getAllLoginUsers
 GET http://localhost:8080/admin/logged-in-users
-Authorization: Bearer b28edd8c-28c3-4907-a48c-785c5c373476
+Authorization: Bearer c4ce5876-81ac-4c76-9ec0-f39c7f088837

@@ -21,7 +21,6 @@ import com.team.lottery.draws.repository.InMemoryDrawResultRepository;
 import com.team.lottery.common.health.HealthController;
 
 import javax.sql.DataSource;
-import java.util.Map;
 
 
 /**
@@ -60,7 +59,7 @@ public final class Application {
         DrawController drawController = new DrawController(drawService);
         AdminDrawController adminDrawController = new AdminDrawController(drawService);
 
-        Javalin app = JavalinConfig.create(cfg.port(), ds, routes -> {
+        Javalin app = JavalinConfig.create(cfg.port(), routes -> {
 
             // health routes
             routes.get("/", ctx -> ctx.result("Server is running"));

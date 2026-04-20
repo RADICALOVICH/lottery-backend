@@ -111,8 +111,8 @@ public class AuthController {
     }
 
     public void logout(Context ctx) throws Exception {
-        UserResponse user = AuthUtil.requireUser(ctx, tokenService, userRepository);
         String token = AuthUtil.extractToken(ctx);
+        AuthUtil.requireUserByToken(token, tokenService, userRepository);
 
         tokenService.removeToken(token);
 

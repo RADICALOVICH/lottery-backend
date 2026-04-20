@@ -15,7 +15,7 @@ public final class JavalinConfig {
     private JavalinConfig() {
     }
 
-    public static Javalin create(int port, DataSource ds, Consumer<RoutesConfig> routesRegister) {
+    public static Javalin create(int port, Consumer<RoutesConfig> routesRegister) {
         return Javalin.create(config -> {
             config.jetty.port = port;
 
