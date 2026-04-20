@@ -1,12 +1,13 @@
 package com.team.lottery.users.util;
 
+import com.team.lottery.common.errors.ForbiddenException;
+import com.team.lottery.common.errors.UnauthorizedException;
 import io.javalin.http.Context;
 import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.TokenService;
 
 import java.sql.SQLException;
-import java.util.Map;
 
 public final class AuthUtil {
 
@@ -17,26 +18,17 @@ public final class AuthUtil {
         String authHeader = ctx.header("Authorization");
 
         if (authHeader == null || authHeader.isBlank()) {
-            ctx.status(401).json(Map.of(
-                    "error", "Authorization header is required"
-            ));
-            return null;
+            throw new UnauthorizedException("Authorization header is required");
         }
 
         if (!authHeader.startsWith("Bearer ")) {
-            ctx.status(401).json(Map.of(
-                    "error", "Invalid authorization format"
-            ));
-            return null;
+            throw new UnauthorizedException("Invalid authorization format");
         }
 
         String token = authHeader.substring("Bearer ".length()).trim();
 
         if (token.isBlank()) {
-            ctx.status(401).json(Map.of(
-                    "error", "Token is required"
-            ));
-            return null;
+            throw new UnauthorizedException("Token is required");
         }
 
         return token;
@@ -49,39 +41,22 @@ public final class AuthUtil {
     ) throws SQLException {
         String token = extractToken(ctx);
 
-        if (token == null) {
-            return null;
-        }
-
         Long userId = tokenService.getUserIdByToken(token);
-
         if (userId == null) {
-            ctx.status(401).json(Map.of(
-                    "error", "Invalid or expired token"
-            ));
-            return null;
+            throw new UnauthorizedException("Invalid or expired token");
         }
 
         UserResponse user = userRepository.findById(userId);
-
         if (user == null) {
-            ctx.status(401).json(Map.of(
-                    "error", "User not found"
-            ));
-            return null;
+            throw new UnauthorizedException("User not found");
         }
 
         return user;
     }
 
-    public static boolean denyIfNotAdmin(Context ctx, UserResponse user) {
+    public static void requireAdmin(UserResponse user) {
         if (!"ADMIN".equals(user.getRole())) {
-            ctx.status(403).json(Map.of(
-                    "error", "Access denied"
-            ));
-            return true;
+            throw new ForbiddenException("Access denied");
         }
-
-        return false;
     }
 }

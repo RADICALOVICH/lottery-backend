@@ -254,7 +254,7 @@ Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
 ###
 # @name me
 GET http://localhost:8080/users/me
-Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
+Authorization: Bearer b28edd8c-28c3-4907-a48c-785c5c373476
 
 ###
 # @name checkAdmin
@@ -292,10 +292,10 @@ Authorization: Bearer 70467126-d043-469d-a812-0a5ab064d676
 ###
 # @name getAllusers
 GET http://localhost:8080/users
-Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
+Authorization: Bearer b28edd8c-28c3-4907-a48c-785c5c373476
 
 ###
 
 # @name getAllLoginUsers
 GET http://localhost:8080/admin/logged-in-users
-Authorization: Bearer 70dad069-847d-4083-b65b-fadc40e5d068
+Authorization: Bearer b28edd8c-28c3-4907-a48c-785c5c373476

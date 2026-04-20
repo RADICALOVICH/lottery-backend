@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.team.lottery.draws.repository.DrawResultRepository;
 import com.team.lottery.draws.repository.InMemoryDrawResultRepository;
+import com.team.lottery.common.health.HealthController;
 
 import javax.sql.DataSource;
 import java.util.Map;
@@ -42,6 +43,9 @@ public final class Application {
         DataSource ds = DatabaseConfig.init(cfg);
         //ConnectionFactory.init(ds); //for Vladimir K // TO DO :find a way to merge all database acaonnection
 
+        //healthController
+        HealthController healthController = new HealthController(ds);
+
         // User repository initialization
         UserRepository userRepository = new UserRepository(ds);
         TokenService tokenService = new TokenService();
@@ -56,54 +60,18 @@ public final class Application {
         DrawController drawController = new DrawController(drawService);
         AdminDrawController adminDrawController = new AdminDrawController(drawService);
 
-        Javalin app = JavalinConfig.create(cfg.port(), routes -> {
-            //additonal health routes  // TO DO put them in addiotnal file
+        Javalin app = JavalinConfig.create(cfg.port(), ds, routes -> {
 
             // health routes
             routes.get("/", ctx -> ctx.result("Server is running"));
+            healthController.registerRoutes(routes);
 
-            //routes.get("/health", ctx -> ctx.status(200).json(Map.of(
-            //        "status", "UP",
-            //        "service", "lottery-api"
-            //)));
-
-            routes.get("/health/db", ctx -> {
-                try (var connection = ds.getConnection()) {
-                    boolean valid = connection.isValid(2);
-
-                    if (valid) {
-                        ctx.status(200).json(Map.of(
-                                "status", "UP",
-                                "database", "CONNECTED"
-                        ));
-                    } else {
-                        ctx.status(503).json(Map.of(
-                                "status", "DOWN",
-                                "database", "DISCONNECTED"
-                        ));
-                    }
-                } catch (Exception e) {
-                    ctx.status(503).json(Map.of(
-                            "status", "DOWN",
-                            "database", "DISCONNECTED",
-                            "error", e.getMessage()
-                    ));
-                }
-            });
 
             // auth routes
-            routes.post("/auth/register", authController::register);
-            routes.post("/auth/login", authController::login);
-            routes.post("/auth/logout", authController::logout);
+            authController.registerRoutes(routes);
 
             // user routes
-            routes.get("/users/me", userController::me);
-            routes.get("/users", userController::findAll);
-            routes.get("/admin/ping", userController::adminPing);
-            routes.get("/admin/logged-in-users", userController::findLoggedInUsers);
-
-
-
+            userController.registerRoutes(routes);
 
             // draw routes
             drawController.registerRoutes(routes);
