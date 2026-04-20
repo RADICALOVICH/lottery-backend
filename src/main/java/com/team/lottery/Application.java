@@ -5,8 +5,7 @@ import com.team.lottery.config.DatabaseConfig;
 import com.team.lottery.config.JavalinConfig;
 import com.team.lottery.draws.controller.AdminDrawController;
 import com.team.lottery.draws.controller.DrawController;
-import com.team.lottery.draws.repository.DrawRepository;
-import com.team.lottery.draws.repository.InMemoryDrawRepository;
+import com.team.lottery.draws.repository.*;
 import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.users.controller.AuthController;
 import com.team.lottery.users.controller.UserController;
@@ -53,7 +52,7 @@ public final class Application {
         UserController userController = new UserController(userRepository, tokenService);
 
         //Draw repository initialization
-        DrawRepository drawRepository = new InMemoryDrawRepository();
+        DrawRepository drawRepository = new JdbcDrawRepository(ds);
         DrawResultRepository drawResultRepository = new InMemoryDrawResultRepository();
         DrawService drawService = new DrawService(drawRepository, drawResultRepository);
         DrawController drawController = new DrawController(drawService);

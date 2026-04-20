@@ -9,19 +9,19 @@ Content-Type: application/json
 }
 
 ### getAllDraws
-GET http://localhost:8080/api/v1/draws
+GET http://localhost:8080/draws
 
 ### getActiveDraws
-GET http://localhost:8080/api/v1/draws?status=ACTIVE
+GET http://localhost:8080/draws?status=ACTIVE
 
 ### getCompletedDraws
-GET http://localhost:8080/api/v1/draws?status=COMPLETED
+GET http://localhost:8080/draws?status=COMPLETED
 
 ### getDrawById
-GET http://localhost:8080/api/v1/draws/1
+GET http://localhost:8080/draws/1
 
 ### runDrawById
 POST http://localhost:8080/admin/draws/1/run-draw
 
 ### getDrawResultById
-GET http://localhost:8080/api/v1/draws/1/result
+GET http://localhost:8080/draws/1/result

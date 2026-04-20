@@ -1,5 +1,6 @@
 package com.team.lottery.draws.repository;
 
+import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawResult;
 
 import javax.sql.DataSource;
@@ -9,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public class JdbcDrawResultRepository implements DrawResultRepository {

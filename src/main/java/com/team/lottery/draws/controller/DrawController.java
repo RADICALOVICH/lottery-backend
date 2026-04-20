@@ -27,7 +27,7 @@ public class DrawController {
     }
 
     public void registerRoutes(RoutesConfig routes) {
-        routes.get("/api/v1/draws", ctx -> {
+        routes.get("/draws", ctx -> {
             String statusParam = ctx.queryParam("status");
 
             List<Draw> draws;
@@ -45,7 +45,7 @@ public class DrawController {
             ctx.json(response);
         });
 
-       routes.get("/api/v1/draws/{id}", ctx -> {
+       routes.get("/draws/{id}", ctx -> {
             Long drawId = Long.valueOf(ctx.pathParam("id"));
 
             Draw draw = drawService.getDrawById(drawId)
@@ -54,7 +54,7 @@ public class DrawController {
             ctx.json(DrawMapper.toResponse(draw));
         });
 
-       routes.get("/api/v1/draws/{id}/result", ctx -> {
+       routes.get("/draws/{id}/result", ctx -> {
             Long drawId = Long.valueOf(ctx.pathParam("id"));
 
            DrawResultResponse response = drawService.getDrawResultByDrawId(drawId)
