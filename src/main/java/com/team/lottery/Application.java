@@ -1,6 +1,5 @@
 package com.team.lottery;
 
-import com.team.lottery.common.db.ConnectionFactory;
 import com.team.lottery.config.AppConfig;
 import com.team.lottery.config.DatabaseConfig;
 import com.team.lottery.config.JavalinConfig;
@@ -41,10 +40,10 @@ public final class Application {
         //DataSource ds = LocalDatabaseConfig.initWithoutFlyway();
 
         DataSource ds = DatabaseConfig.init(cfg);
-        ConnectionFactory.init(ds); //for Vladimir K // TO DO :find a way to merge all database acaonnection
+        //ConnectionFactory.init(ds); //for Vladimir K // TO DO :find a way to merge all database acaonnection
 
         // User repository initialization
-        UserRepository userRepository = new UserRepository();
+        UserRepository userRepository = new UserRepository(ds);
         TokenService tokenService = new TokenService();
 
         AuthController authController = new AuthController(userRepository, tokenService);

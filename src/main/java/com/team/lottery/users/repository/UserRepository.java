@@ -1,9 +1,10 @@
 package com.team.lottery.users.repository;
 
-import com.team.lottery.common.db.ConnectionFactory;
+
 import com.team.lottery.users.model.UserAuthData;
 import com.team.lottery.users.model.UserResponse;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,10 +16,16 @@ import java.util.stream.Collectors;
 
 public class UserRepository {
 
+    private final DataSource ds;
+
+    public UserRepository(DataSource ds) {
+        this.ds = ds;
+    }
+
     public boolean existsByLogin(String login) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE login = ? LIMIT 1";
 
-        try (Connection connection = ConnectionFactory.getConnection();
+        try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, login);
@@ -36,7 +43,7 @@ public class UserRepository {
                 RETURNING id
                 """;
 
-        try (Connection connection = ConnectionFactory.getConnection();
+        try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, login);
@@ -59,7 +66,7 @@ public class UserRepository {
                 LIMIT 1
                 """;
 
-        try (Connection connection = ConnectionFactory.getConnection();
+        try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, login);
@@ -86,7 +93,7 @@ public class UserRepository {
             LIMIT 1
             """;
 
-        try (Connection connection = ConnectionFactory.getConnection();
+        try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, id);
@@ -112,7 +119,7 @@ public class UserRepository {
 
         List<UserResponse> users = new ArrayList<>();
 
-        try (Connection connection = ConnectionFactory.getConnection();
+        try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
 
@@ -146,7 +153,7 @@ public class UserRepository {
             ORDER BY id
             """.formatted(placeholders);
 
-        try (Connection connection = ConnectionFactory.getConnection();
+        try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             for (int i = 0; i < ids.size(); i++) {

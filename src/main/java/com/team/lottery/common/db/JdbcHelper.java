@@ -8,39 +8,24 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Тонкая обёртка над JDBC. Репозитории вызывают отсюда withConnection/withTx,
- * чтобы не повторять ритуал открытия соединения и управления транзакцией.
- *
- * SQLException всегда заворачивается в RuntimeException — сервисы и контроллеры
- * не обязаны знать о чекед-исключениях JDBC. ErrorHandler превратит такую ошибку
- * в 500 INTERNAL_ERROR.
- *
- * Примечание по PG ENUM: здесь нет логики кастов — они пишутся прямо в SQL
- * репозиториев (например, "?::user_role"). См. HANDOFF.md 4.1.
- */
 public final class JdbcHelper {
+
+    private static final String DB_ERROR_MESSAGE = "Database error";
+
+    public static final ParamSetter NO_PARAMS = ps -> {
+    };
 
     private JdbcHelper() {
     }
 
-    /**
-     * Выдаёт соединение из пула, закрывает после выполнения work.
-     * Автокоммит оставляет как есть (по умолчанию true в Hikari).
-     */
     public static <T> T withConnection(DataSource ds, SqlFunction<Connection, T> work) {
         try (Connection c = ds.getConnection()) {
             return work.apply(c);
         } catch (SQLException e) {
-            throw new RuntimeException("Database error", e);
+            throw dbError(e);
         }
     }
 
-    /**
-     * Выполняет work в одной транзакции. Успех — commit, любое исключение — rollback.
-     * Оригинальное RuntimeException (включая ApiException) пробрасывается без обёртки,
-     * чтобы ErrorHandler вернул корректный HTTP-код клиенту.
-     */
     public static <T> T withTx(DataSource ds, SqlFunction<Connection, T> work) {
         try (Connection c = ds.getConnection()) {
             c.setAutoCommit(false);
@@ -49,24 +34,22 @@ public final class JdbcHelper {
                 c.commit();
                 return result;
             } catch (Exception e) {
-                try {
-                    c.rollback();
-                } catch (SQLException rb) {
-                    e.addSuppressed(rb);
-                }
-                if (e instanceof RuntimeException re) {
-                    throw re;
-                }
-                throw new RuntimeException(e);
+                rollbackQuietly(c, e);
+                throw propagate(e);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Database error", e);
+            throw dbError(e);
         }
     }
 
     /**
-     * SELECT → список объектов. Параметры выставляются через setter, строки маппятся через mapper.
+     * Legacy JDBC helper methods.
+     *
+     * They remain for backward compatibility with existing repositories.
+     * Do not use them in new repositories.
+     * New code should use plain JDBC directly inside repository methods.
      */
+    @Deprecated(forRemoval = false, since = "2026-04-26")
     public static <T> List<T> query(
             Connection c,
             String sql,
@@ -74,7 +57,7 @@ public final class JdbcHelper {
             RowMapper<T> mapper
     ) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(sql)) {
-            setter.set(ps);
+            safeSetter(setter).set(ps);
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> result = new ArrayList<>();
                 while (rs.next()) {
@@ -84,15 +67,49 @@ public final class JdbcHelper {
             }
         }
     }
+    @Deprecated(forRemoval = false, since = "2026-04-26")
+    public static <T> List<T> query(
+            Connection c,
+            String sql,
+            RowMapper<T> mapper
+    ) throws SQLException {
+        return query(c, sql, NO_PARAMS, mapper);
+    }
 
-    /**
-     * UPDATE/DELETE/INSERT без RETURNING. Возвращает количество затронутых строк.
-     */
+    @Deprecated(forRemoval = false, since = "2026-04-26")
     public static int update(Connection c, String sql, ParamSetter setter) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(sql)) {
-            setter.set(ps);
+            safeSetter(setter).set(ps);
             return ps.executeUpdate();
         }
+    }
+
+    @Deprecated(forRemoval = false, since = "2026-04-26")
+    public static int update(Connection c, String sql) throws SQLException {
+        return update(c, sql, NO_PARAMS);
+    }
+
+    private static ParamSetter safeSetter(ParamSetter setter) {
+        return setter != null ? setter : NO_PARAMS;
+    }
+
+    private static void rollbackQuietly(Connection c, Exception originalException) {
+        try {
+            c.rollback();
+        } catch (SQLException rollbackException) {
+            originalException.addSuppressed(rollbackException);
+        }
+    }
+
+    private static RuntimeException propagate(Exception e) {
+        if (e instanceof RuntimeException re) {
+            return re;
+        }
+        return new RuntimeException(e);
+    }
+
+    private static RuntimeException dbError(SQLException e) {
+        return new RuntimeException(DB_ERROR_MESSAGE, e);
     }
 
     @FunctionalInterface
