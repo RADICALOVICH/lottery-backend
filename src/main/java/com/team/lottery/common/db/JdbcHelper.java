@@ -1,3 +1,6 @@
+//TO DO: delete file, not used!
+
+/*
 package com.team.lottery.common.db;
 
 import javax.sql.DataSource;
@@ -49,6 +52,8 @@ public final class JdbcHelper {
      * Do not use them in new repositories.
      * New code should use plain JDBC directly inside repository methods.
      */
+
+/*
     @Deprecated(forRemoval = false, since = "2026-04-26")
     public static <T> List<T> query(
             Connection c,
@@ -93,6 +98,7 @@ public final class JdbcHelper {
         return setter != null ? setter : NO_PARAMS;
     }
 
+
     private static void rollbackQuietly(Connection c, Exception originalException) {
         try {
             c.rollback();
@@ -127,3 +133,5 @@ public final class JdbcHelper {
         T map(ResultSet rs) throws SQLException;
     }
 }
+
+ */
