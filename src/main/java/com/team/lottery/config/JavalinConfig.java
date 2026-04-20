@@ -7,7 +7,6 @@ import io.javalin.Javalin;
 import io.javalin.config.RoutesConfig;
 import io.javalin.json.JavalinJackson;
 
-import javax.sql.DataSource;
 import java.util.function.Consumer;
 
 public final class JavalinConfig {

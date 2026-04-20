@@ -6,7 +6,6 @@ import com.team.lottery.common.errors.ValidationException;
 import com.team.lottery.users.dto.LoginRequest;
 import com.team.lottery.users.dto.RegisterRequest;
 import com.team.lottery.users.model.UserAuthData;
-import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.TokenService;
 import com.team.lottery.users.util.AuthUtil;
