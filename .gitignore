@@ -35,3 +35,7 @@ Thumbs.db
 # Внутренние заметки — не коммитим
 HANDOFF.md
 PROJECT.md
+
+
+.postman/
+postman/
