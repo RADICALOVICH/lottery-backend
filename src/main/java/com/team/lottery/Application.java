@@ -18,6 +18,10 @@ import org.slf4j.LoggerFactory;
 import com.team.lottery.draws.repository.DrawResultRepository;
 import com.team.lottery.draws.repository.InMemoryDrawResultRepository;
 import com.team.lottery.common.health.HealthController;
+import com.team.lottery.ticket.controller.TicketController;
+import com.team.lottery.ticket.repository.TicketJdbcRepository;
+import com.team.lottery.ticket.repository.TicketRepository;
+import com.team.lottery.ticket.service.TicketService;
 
 import javax.sql.DataSource;
 
@@ -57,6 +61,9 @@ public final class Application {
         DrawService drawService = new DrawService(drawRepository, drawResultRepository);
         DrawController drawController = new DrawController(drawService);
         AdminDrawController adminDrawController = new AdminDrawController(drawService);
+        TicketRepository ticketRepository = new TicketJdbcRepository(ds);
+        TicketService ticketService = new TicketService(ds, ticketRepository);
+        TicketController ticketController = new TicketController(ticketService);
 
         Javalin app = JavalinConfig.create(cfg.port(), routes -> {
 
@@ -74,6 +81,9 @@ public final class Application {
             // draw routes
             drawController.registerRoutes(routes);
             adminDrawController.registerRoutes(routes);
+
+            // ticket routes
+            ticketController.registerRoutes(routes);
         });
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
