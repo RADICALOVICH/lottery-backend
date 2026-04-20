@@ -8,8 +8,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,116 +21,14 @@ public class TicketJdbcRepository implements TicketRepository {
     }
 
     @Override
-    public Optional<Ticket> findById(long id) {
-        String sql = """
-                SELECT id, draw_id, owner_id, ticket_number, status, created_at
-                FROM tickets
-                WHERE id = ?
-                """;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setLong(1, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRow(rs));
-                }
-                return Optional.empty();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find ticket by id: " + id, e);
-        }
-    }
-
-    @Override
-    public List<Ticket> findByOwnerId(long ownerId) {
-        String sql = """
-                SELECT id, draw_id, owner_id, ticket_number, status, created_at
-                FROM tickets
-                WHERE owner_id = ?
-                ORDER BY id
-                """;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setLong(1, ownerId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                List<Ticket> tickets = new ArrayList<>();
-                while (rs.next()) {
-                    tickets.add(mapRow(rs));
-                }
-                return tickets;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find tickets by owner id: " + ownerId, e);
-        }
-    }
-
-    @Override
-    public List<Ticket> findByDrawId(long drawId) {
-        String sql = """
-                SELECT id, draw_id, owner_id, ticket_number, status, created_at
-                FROM tickets
-                WHERE draw_id = ?
-                ORDER BY ticket_number
-                """;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setLong(1, drawId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                List<Ticket> tickets = new ArrayList<>();
-                while (rs.next()) {
-                    tickets.add(mapRow(rs));
-                }
-                return tickets;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find tickets by draw id: " + drawId, e);
-        }
-    }
-
-    @Override
-    public List<Ticket> findSoldByDrawId(long drawId) {
-        String sql = """
-                SELECT id, draw_id, owner_id, ticket_number, status, created_at
-                FROM tickets
-                WHERE draw_id = ? AND status = 'SOLD'
-                ORDER BY ticket_number
-                """;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setLong(1, drawId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                List<Ticket> tickets = new ArrayList<>();
-                while (rs.next()) {
-                    tickets.add(mapRow(rs));
-                }
-                return tickets;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find sold tickets by draw id: " + drawId, e);
-        }
-    }
-
-    @Override
     public Optional<Ticket> findAnyAvailableByDrawIdForUpdate(Connection connection, long drawId) {
         String sql = """
-                SELECT id, draw_id, owner_id, ticket_number, status, created_at
+                SELECT id, draw_id, owner_id, status
                 FROM tickets
                 WHERE draw_id = ? AND status = 'AVAILABLE'
-                ORDER BY ticket_number
+                ORDER BY id
                 LIMIT 1
-                FOR UPDATE SKIP LOCKED
+                FOR UPDATE
                 """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -145,7 +41,7 @@ public class TicketJdbcRepository implements TicketRepository {
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to lock available ticket for draw id: " + drawId, e);
+            throw new RuntimeException("Failed to find available ticket for draw: " + drawId, e);
         }
     }
 
@@ -154,94 +50,94 @@ public class TicketJdbcRepository implements TicketRepository {
         String sql = """
                 UPDATE tickets
                 SET owner_id = ?, status = 'SOLD'
-                WHERE id = ? AND status = 'AVAILABLE' AND owner_id IS NULL
+                WHERE id = ? AND status = 'AVAILABLE'
                 """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.setLong(2, ticketId);
-            return ps.executeUpdate() == 1;
+            return ps.executeUpdate() > 0;
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to buy ticket id: " + ticketId, e);
+            throw new RuntimeException("Failed to buy ticket: " + ticketId, e);
         }
     }
 
     @Override
-    public void updateStatus(long ticketId, TicketStatus status) {
+    public Optional<Ticket> findById(long ticketId) {
         String sql = """
-                UPDATE tickets
-                SET status = ?::ticket_status
+                SELECT id, draw_id, owner_id, status
+                FROM tickets
                 WHERE id = ?
                 """;
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
 
-            ps.setString(1, status.name());
-            ps.setLong(2, ticketId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to update ticket status for id: " + ticketId, e);
-        }
-    }
-
-    @Override
-    public void updateStatusesByDrawIdAndCurrentStatus(long drawId, TicketStatus currentStatus, TicketStatus newStatus) {
-        String sql = """
-                UPDATE tickets
-                SET status = ?::ticket_status
-                WHERE draw_id = ? AND status = ?::ticket_status
-                """;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setString(1, newStatus.name());
-            ps.setLong(2, drawId);
-            ps.setString(3, currentStatus.name());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to update ticket statuses for draw id: " + drawId, e);
-        }
-    }
-
-    @Override
-    public Ticket save(Ticket ticket) {
-        String sql = """
-                INSERT INTO tickets (draw_id, owner_id, ticket_number, status, created_at)
-                VALUES (?, ?, ?, ?::ticket_status, ?)
-                RETURNING id, draw_id, owner_id, ticket_number, status, created_at
-                """;
-
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setLong(1, ticket.drawId());
-
-            if (ticket.ownerId() == null) {
-                ps.setNull(2, Types.BIGINT);
-            } else {
-                ps.setLong(2, ticket.ownerId());
-            }
-
-            ps.setInt(3, ticket.ticketNumber());
-            ps.setString(4, ticket.status().name());
-            ps.setTimestamp(5, Timestamp.from(ticket.createdAt()));
+            ps.setLong(1, ticketId);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) {
-                    throw new RuntimeException("Failed to insert ticket");
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
                 }
-                return mapRow(rs);
+                return Optional.empty();
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to save ticket", e);
+            throw new RuntimeException("Failed to find ticket by id: " + ticketId, e);
+        }
+    }
+
+    @Override
+    public List<Ticket> findByOwnerId(long userId) {
+        String sql = """
+                SELECT id, draw_id, owner_id, status
+                FROM tickets
+                WHERE owner_id = ?
+                ORDER BY id
+                """;
+
+        List<Ticket> result = new ArrayList<>();
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRow(rs));
+                }
+            }
+
+            return result;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find tickets by owner id: " + userId, e);
+        }
+    }
+
+    @Override
+    public void createTickets(long drawId, int totalTickets) {
+        String sql = """
+            INSERT INTO tickets (draw_id, owner_id, ticket_number, status)
+            VALUES (?, NULL, ?, 'AVAILABLE')
+            """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            for (int i = 1; i <= totalTickets; i++) {
+                ps.setLong(1, drawId);
+                ps.setInt(2, i);
+                ps.addBatch();
+            }
+
+            ps.executeBatch();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to create tickets for draw: " + drawId, e);
         }
     }
 
     private Ticket mapRow(ResultSet rs) throws SQLException {
-        Object owner = rs.getObject("owner_id");
-        Long ownerId = owner == null ? null : ((Number) owner).longValue();
+        Long ownerId = rs.getObject("owner_id") == null ? null : rs.getLong("owner_id");
 
         return new Ticket(
                 rs.getLong("id"),

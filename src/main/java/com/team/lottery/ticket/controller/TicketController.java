@@ -5,6 +5,7 @@ import com.team.lottery.ticket.dto.BuyTicketResponse;
 import com.team.lottery.ticket.dto.TicketResponse;
 import com.team.lottery.ticket.mapper.TicketMapper;
 import com.team.lottery.ticket.service.TicketService;
+import com.team.lottery.users.service.TokenService;
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.Context;
 
@@ -14,9 +15,11 @@ import java.util.stream.Collectors;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final TokenService tokenService;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketService ticketService, TokenService tokenService) {
         this.ticketService = ticketService;
+        this.tokenService = tokenService;
     }
 
     public void registerRoutes(RoutesConfig routes) {
@@ -54,18 +57,19 @@ public class TicketController {
     }
 
     private long requireUserId(Context ctx) {
-        Object value = ctx.attribute("userId");
+        String authHeader = ctx.header("Authorization");
 
-        if (value instanceof Long v) {
-            return v;
-        }
-        if (value instanceof Integer v) {
-            return v.longValue();
-        }
-        if (value instanceof String v) {
-            return Long.parseLong(v);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Authorization required");
         }
 
-        throw new UnauthorizedException("Authorization required");
+        String token = authHeader.substring("Bearer ".length()).trim();
+        Long userId = tokenService.getUserIdByToken(token);
+
+        if (userId == null) {
+            throw new UnauthorizedException("Authorization required");
+        }
+
+        return userId;
     }
 }

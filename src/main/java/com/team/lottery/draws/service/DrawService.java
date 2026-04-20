@@ -9,6 +9,7 @@ import com.team.lottery.draws.model.DrawResult;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
 import com.team.lottery.draws.repository.DrawResultRepository;
+import com.team.lottery.ticket.service.TicketService;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -28,10 +29,14 @@ import java.util.Optional;
 public class DrawService {
     private final DrawRepository drawRepository;
     private final DrawResultRepository drawResultRepository;
+    private final TicketService ticketService;
 
-    public DrawService(DrawRepository drawRepository, DrawResultRepository drawResultRepository) {
+    public DrawService(DrawRepository drawRepository,
+                       DrawResultRepository drawResultRepository,
+                       TicketService ticketService) {
         this.drawRepository = drawRepository;
         this.drawResultRepository = drawResultRepository;
+        this.ticketService = ticketService;
     }
 
     /**
@@ -70,7 +75,7 @@ public class DrawService {
         Draw savedDraw = drawRepository.save(draw);
 
         // TODO: здесь потом нужно вызвать ticket-логику
-        // ticketService.generateTickets(savedDraw.getId(), savedDraw.getTotalTickets());
+        ticketService.generateTickets(savedDraw.getId(), savedDraw.getTotalTickets());
 
         return savedDraw;
     }

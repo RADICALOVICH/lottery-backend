@@ -22,6 +22,10 @@ public class TicketService {
         this.ticketRepository = ticketRepository;
     }
 
+    public void generateTickets(long drawId, int totalTickets) {
+        ticketRepository.createTickets(drawId, totalTickets);
+    }
+
     public Ticket buyTicket(long drawId, long userId) {
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
