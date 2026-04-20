@@ -1,6 +1,5 @@
 package com.team.lottery.ticket.service;
 
-import com.team.lottery.common.db.JdbcHelper;
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.ForbiddenException;
 import com.team.lottery.common.errors.NotFoundException;
@@ -9,8 +8,9 @@ import com.team.lottery.ticket.model.TicketStatus;
 import com.team.lottery.ticket.repository.TicketRepository;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class TicketService {
 
@@ -23,18 +23,36 @@ public class TicketService {
     }
 
     public Ticket buyTicket(long drawId, long userId) {
-        return JdbcHelper.withTx(dataSource, connection -> {
-            Ticket ticket = ticketRepository.findAnyAvailableByDrawIdForUpdate(connection, drawId)
-                    .orElseThrow(() -> new ConflictException("No available tickets for this draw"));
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(false);
 
-            boolean updated = ticketRepository.buyTicket(connection, ticket.id(), userId);
-            if (!updated) {
-                throw new ConflictException("Ticket was already bought");
+            try {
+                Ticket ticket = ticketRepository.findAnyAvailableByDrawIdForUpdate(connection, drawId)
+                        .orElseThrow(() -> new ConflictException("No available tickets for this draw"));
+
+                boolean updated = ticketRepository.buyTicket(connection, ticket.id(), userId);
+
+                if (!updated) {
+                    throw new ConflictException("Ticket was already bought");
+                }
+
+                connection.commit();
+
+                return ticketRepository.findById(ticket.id())
+                        .orElseThrow(() -> new NotFoundException("Bought ticket not found"));
+            } catch (Exception e) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackException) {
+                    e.addSuppressed(rollbackException);
+                }
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
             }
-
-            return ticketRepository.findById(ticket.id())
-                    .orElseThrow(() -> new NotFoundException("Bought ticket not found"));
-        });
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to buy ticket in transaction", e);
+        }
     }
 
     public List<Ticket> getMyTickets(long userId) {
@@ -56,32 +74,5 @@ public class TicketService {
         }
 
         return ticket;
-    }
-
-    public List<Ticket> getTicketsByDrawId(long drawId) {
-        return ticketRepository.findByDrawId(drawId);
-    }
-
-    public List<Ticket> getSoldTicketsForDraw(long drawId) {
-        return ticketRepository.findSoldByDrawId(drawId);
-    }
-
-    public Ticket chooseWinningTicket(long drawId) {
-        List<Ticket> soldTickets = ticketRepository.findSoldByDrawId(drawId);
-
-        if (soldTickets.isEmpty()) {
-            throw new ConflictException("No sold tickets for draw");
-        }
-
-        int winnerIndex = ThreadLocalRandom.current().nextInt(soldTickets.size());
-        return soldTickets.get(winnerIndex);
-    }
-
-    public void markAllSoldAsLose(long drawId) {
-        ticketRepository.updateStatusesByDrawIdAndCurrentStatus(drawId, TicketStatus.SOLD, TicketStatus.LOSE);
-    }
-
-    public void markTicketAsWin(long ticketId) {
-        ticketRepository.updateStatus(ticketId, TicketStatus.WIN);
     }
 }

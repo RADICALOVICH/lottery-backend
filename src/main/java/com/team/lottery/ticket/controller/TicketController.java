@@ -51,7 +51,6 @@ public class TicketController {
 
             ctx.json(response);
         });
-
     }
 
     private long requireUserId(Context ctx) {

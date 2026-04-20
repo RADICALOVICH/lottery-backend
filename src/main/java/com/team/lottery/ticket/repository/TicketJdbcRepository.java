@@ -1,6 +1,5 @@
 package com.team.lottery.ticket.repository;
 
-import com.team.lottery.common.db.JdbcHelper;
 import com.team.lottery.ticket.model.Ticket;
 import com.team.lottery.ticket.model.TicketStatus;
 
@@ -11,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,18 +30,20 @@ public class TicketJdbcRepository implements TicketRepository {
                 WHERE id = ?
                 """;
 
-        return JdbcHelper.withConnection(dataSource, connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                ps.setLong(1, id);
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
 
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return Optional.of(mapRow(rs));
-                    }
-                    return Optional.empty();
+            ps.setLong(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
                 }
+                return Optional.empty();
             }
-        });
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find ticket by id: " + id, e);
+        }
     }
 
     @Override
@@ -53,9 +55,21 @@ public class TicketJdbcRepository implements TicketRepository {
                 ORDER BY id
                 """;
 
-        return JdbcHelper.withConnection(dataSource, connection ->
-                JdbcHelper.query(connection, sql, ps -> ps.setLong(1, ownerId), this::mapRow)
-        );
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, ownerId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Ticket> tickets = new ArrayList<>();
+                while (rs.next()) {
+                    tickets.add(mapRow(rs));
+                }
+                return tickets;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find tickets by owner id: " + ownerId, e);
+        }
     }
 
     @Override
@@ -67,9 +81,21 @@ public class TicketJdbcRepository implements TicketRepository {
                 ORDER BY ticket_number
                 """;
 
-        return JdbcHelper.withConnection(dataSource, connection ->
-                JdbcHelper.query(connection, sql, ps -> ps.setLong(1, drawId), this::mapRow)
-        );
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, drawId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Ticket> tickets = new ArrayList<>();
+                while (rs.next()) {
+                    tickets.add(mapRow(rs));
+                }
+                return tickets;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find tickets by draw id: " + drawId, e);
+        }
     }
 
     @Override
@@ -81,9 +107,21 @@ public class TicketJdbcRepository implements TicketRepository {
                 ORDER BY ticket_number
                 """;
 
-        return JdbcHelper.withConnection(dataSource, connection ->
-                JdbcHelper.query(connection, sql, ps -> ps.setLong(1, drawId), this::mapRow)
-        );
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, drawId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Ticket> tickets = new ArrayList<>();
+                while (rs.next()) {
+                    tickets.add(mapRow(rs));
+                }
+                return tickets;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find sold tickets by draw id: " + drawId, e);
+        }
     }
 
     @Override
@@ -106,6 +144,8 @@ public class TicketJdbcRepository implements TicketRepository {
                 }
                 return Optional.empty();
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to lock available ticket for draw id: " + drawId, e);
         }
     }
 
@@ -121,6 +161,8 @@ public class TicketJdbcRepository implements TicketRepository {
             ps.setLong(1, userId);
             ps.setLong(2, ticketId);
             return ps.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to buy ticket id: " + ticketId, e);
         }
     }
 
@@ -132,13 +174,15 @@ public class TicketJdbcRepository implements TicketRepository {
                 WHERE id = ?
                 """;
 
-        JdbcHelper.withConnection(dataSource, connection -> {
-            JdbcHelper.update(connection, sql, ps -> {
-                ps.setString(1, status.name());
-                ps.setLong(2, ticketId);
-            });
-            return null;
-        });
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, status.name());
+            ps.setLong(2, ticketId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update ticket status for id: " + ticketId, e);
+        }
     }
 
     @Override
@@ -149,14 +193,16 @@ public class TicketJdbcRepository implements TicketRepository {
                 WHERE draw_id = ? AND status = ?::ticket_status
                 """;
 
-        JdbcHelper.withConnection(dataSource, connection -> {
-            JdbcHelper.update(connection, sql, ps -> {
-                ps.setString(1, newStatus.name());
-                ps.setLong(2, drawId);
-                ps.setString(3, currentStatus.name());
-            });
-            return null;
-        });
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, newStatus.name());
+            ps.setLong(2, drawId);
+            ps.setString(3, currentStatus.name());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update ticket statuses for draw id: " + drawId, e);
+        }
     }
 
     @Override
@@ -167,28 +213,30 @@ public class TicketJdbcRepository implements TicketRepository {
                 RETURNING id, draw_id, owner_id, ticket_number, status, created_at
                 """;
 
-        return JdbcHelper.withConnection(dataSource, connection -> {
-            try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                ps.setLong(1, ticket.drawId());
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
 
-                if (ticket.ownerId() == null) {
-                    ps.setNull(2, Types.BIGINT);
-                } else {
-                    ps.setLong(2, ticket.ownerId());
-                }
+            ps.setLong(1, ticket.drawId());
 
-                ps.setInt(3, ticket.ticketNumber());
-                ps.setString(4, ticket.status().name());
-                ps.setTimestamp(5, Timestamp.from(ticket.createdAt()));
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        throw new RuntimeException("Failed to insert ticket");
-                    }
-                    return mapRow(rs);
-                }
+            if (ticket.ownerId() == null) {
+                ps.setNull(2, Types.BIGINT);
+            } else {
+                ps.setLong(2, ticket.ownerId());
             }
-        });
+
+            ps.setInt(3, ticket.ticketNumber());
+            ps.setString(4, ticket.status().name());
+            ps.setTimestamp(5, Timestamp.from(ticket.createdAt()));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new RuntimeException("Failed to insert ticket");
+                }
+                return mapRow(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to save ticket", e);
+        }
     }
 
     private Ticket mapRow(ResultSet rs) throws SQLException {
