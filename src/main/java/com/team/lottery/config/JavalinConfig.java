@@ -28,9 +28,10 @@ public final class JavalinConfig {
                 mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             }));
 
-            config.routes.get("/health", ctx ->
-                    ctx.json(Map.of("status", "ok"))
-            );
+            config.routes.get("/health", ctx -> ctx.status(200).json(Map.of(
+                    "status", "UP",
+                    "service", "lottery-api"
+            )));
 
             routesRegister.accept(config.routes);
 
