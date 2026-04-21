@@ -19,7 +19,7 @@ WORKDIR /app
 RUN groupadd -r app && useradd -r -g app app
 USER app
 
-COPY --from=build /app/build/libs/*all.jar ./app.jar
+COPY --from=build /app/build/libs/lottery-backend-all.jar ./app.jar
 
 EXPOSE 8080
 

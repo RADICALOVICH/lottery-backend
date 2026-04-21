@@ -1,3 +1,6 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.file.DuplicatesStrategy
+
 plugins {
     java
     application
@@ -42,16 +45,13 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.23.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.23.0")
 
-
     testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.4"))
-
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 
     testImplementation("io.rest-assured:rest-assured:5.5.2")
     testImplementation("org.apache.commons:commons-lang3:3.20.0")
     testImplementation("commons-codec:commons-codec:1.21.0")
-
 }
 
 application {
@@ -66,6 +66,19 @@ tasks.test {
     }
 }
 
+tasks.named<ShadowJar>("shadowJar") {
+    archiveFileName.set("lottery-backend-all.jar")
+    archiveClassifier.set("")
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    mergeServiceFiles()
+
+    filesNotMatching("META-INF/services/**") {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}
+
 tasks.build {
-    dependsOn("shadowJar")
+    dependsOn(tasks.shadowJar)
 }
