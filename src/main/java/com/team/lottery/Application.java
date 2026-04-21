@@ -6,6 +6,7 @@ import com.team.lottery.config.JavalinConfig;
 import com.team.lottery.draws.controller.AdminDrawController;
 import com.team.lottery.draws.controller.DrawController;
 import com.team.lottery.draws.repository.*;
+import com.team.lottery.draws.scheduler.DrawScheduler;
 import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.users.controller.AuthController;
 import com.team.lottery.users.controller.UserController;
@@ -16,7 +17,6 @@ import io.javalin.Javalin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.team.lottery.draws.repository.DrawResultRepository;
-import com.team.lottery.draws.repository.InMemoryDrawResultRepository;
 import com.team.lottery.common.health.HealthController;
 import com.team.lottery.ticket.controller.TicketController;
 import com.team.lottery.ticket.repository.TicketJdbcRepository;
@@ -55,15 +55,20 @@ public final class Application {
         AuthController authController = new AuthController(userRepository, tokenService);
         UserController userController = new UserController(userRepository, tokenService);
 
-        //Draw repository initialization
-        DrawRepository drawRepository = new JdbcDrawRepository(ds);
-        DrawResultRepository drawResultRepository = new InMemoryDrawResultRepository();
-        DrawService drawService = new DrawService(drawRepository, drawResultRepository);
-        DrawController drawController = new DrawController(drawService);
-        AdminDrawController adminDrawController = new AdminDrawController(drawService);
+        // Ticket repository initialization
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository);
         TicketController ticketController = new TicketController(ticketService);
+
+        //Draw repository initialization
+        DrawRepository drawRepository = new JdbcDrawRepository(ds);
+        DrawResultRepository drawResultRepository = new JdbcDrawResultRepository(ds);
+        DrawService drawService = new DrawService(ds, drawRepository, drawResultRepository, ticketRepository);
+        DrawController drawController = new DrawController(drawService);
+        AdminDrawController adminDrawController = new AdminDrawController(drawService, userRepository, tokenService);
+
+        DrawScheduler drawScheduler = new DrawScheduler(drawRepository, drawService);
+
 
         Javalin app = JavalinConfig.create(cfg.port(), routes -> {
 
@@ -88,11 +93,14 @@ public final class Application {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Shutting down...");
+            drawScheduler.stop();
             app.stop();
             if (ds instanceof HikariDataSource hds) {
                 hds.close();
             }
         }, "app-shutdown"));
+
+        drawScheduler.start();
 
         app.start();
         log.info("Application started on port {}", cfg.port());

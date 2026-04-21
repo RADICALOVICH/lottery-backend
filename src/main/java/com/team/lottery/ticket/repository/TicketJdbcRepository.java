@@ -206,6 +206,46 @@ public class TicketJdbcRepository implements TicketRepository {
     }
 
     @Override
+    public void updateStatusesByDrawIdAndCurrentStatus(
+            Connection connection,
+            long drawId,
+            TicketStatus currentStatus,
+            TicketStatus newStatus
+    ) {
+        String sql = """
+                UPDATE tickets
+                SET status = ?::ticket_status
+                WHERE draw_id = ? AND status = ?::ticket_status
+        """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, newStatus.name());
+            ps.setLong(2, drawId);
+            ps.setString(3, currentStatus.name());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update ticket statuses for draw id: " + drawId, e);
+        }
+    }
+
+    @Override
+    public void updateStatus(Connection connection, long ticketId, TicketStatus status) {
+        String sql = """
+                UPDATE tickets
+                SET status = ?::ticket_status
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setLong(2, ticketId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update ticket status for id: " + ticketId, e);
+        }
+    }
+
+    @Override
     public Ticket save(Ticket ticket) {
         String sql = """
                 INSERT INTO tickets (draw_id, owner_id, ticket_number, status, created_at)

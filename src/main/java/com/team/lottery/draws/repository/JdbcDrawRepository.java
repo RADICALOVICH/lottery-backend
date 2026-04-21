@@ -47,7 +47,7 @@ public class JdbcDrawRepository implements DrawRepository {
         }
     }
 
-    @Override
+       @Override
     public Optional<Draw> findById(Long id) {
         String sql = """
                 SELECT id, title, status, end_date, total_tickets, created_by, created_at
@@ -122,16 +122,60 @@ public class JdbcDrawRepository implements DrawRepository {
     }
 
     @Override
+    public List<Draw> findActiveEndedDraws(OffsetDateTime now) {
+        String sql = """
+                SELECT id, title, status, end_date, total_tickets, created_by, created_at
+                FROM draws
+                WHERE status = CAST(? AS draw_status)
+                AND end_date <= ?
+                ORDER BY end_date ASC, id ASC
+                """;
+        List<Draw> draws = new ArrayList<>();
+
+        try (Connection connection = ds.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, DrawStatus.ACTIVE.name());
+            statement.setObject(2, now);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    draws.add(mapDraw(resultSet));
+                }
+            }
+            return draws;
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while finding active ended draws", e);
+        }
+    }
+
+    @Override
     public void updateStatus(Long drawId, DrawStatus status) {
         String sql = """
                 UPDATE draws
-                SET status = ?
+                SET status = CAST(? AS draw_status)
                 WHERE id = ?
                 """;
 
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
+            statement.setString(1, status.name());
+            statement.setLong(2, drawId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while updating draw status", e);
+        }
+    }
+
+    @Override
+    public void updateStatusInTransaction(Connection connection, Long drawId, DrawStatus status) {
+        String sql = """
+                UPDATE draws
+                SET status = CAST(? AS draw_status)
+                WHERE id = ?
+                """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, status.name());
             statement.setLong(2, drawId);
             statement.executeUpdate();

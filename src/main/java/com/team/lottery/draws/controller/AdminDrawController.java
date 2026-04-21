@@ -5,14 +5,26 @@ import com.team.lottery.draws.dto.DrawResponse;
 import com.team.lottery.draws.mapper.DrawMapper;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.service.DrawService;
+import com.team.lottery.users.model.UserResponse;
+import com.team.lottery.users.repository.UserRepository;
+import com.team.lottery.users.service.TokenService;
+import com.team.lottery.users.util.AuthUtil;
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.Context;
 
 public class AdminDrawController {
     private final DrawService drawService;
+    private final UserRepository userRepository;
+    private final TokenService tokenService;
 
-    public AdminDrawController(DrawService drawService) {
+    public AdminDrawController(
+            DrawService drawService,
+            UserRepository userRepository,
+            TokenService tokenService
+    ) {
         this.drawService = drawService;
+        this.userRepository = userRepository;
+        this.tokenService = tokenService;
     }
 
     public void registerRoutes(RoutesConfig routes) {
@@ -37,8 +49,9 @@ public class AdminDrawController {
         });
     }
 
-    private Long requireAdminId(Context ctx) {
-        // TODO: заменить на реальную аутентификацию/авторизацию
-        return 1L; // заглушка для идентификатора администратора
+    private Long requireAdminId(Context ctx) throws Exception {
+        UserResponse currentUser = AuthUtil.requireUser(ctx, tokenService, userRepository);
+        AuthUtil.requireAdmin(currentUser);
+        return currentUser.getId();
     }
 }

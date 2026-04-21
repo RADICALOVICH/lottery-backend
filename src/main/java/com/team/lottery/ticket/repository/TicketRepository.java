@@ -25,5 +25,14 @@ public interface TicketRepository {
 
     void updateStatusesByDrawIdAndCurrentStatus(long drawId, TicketStatus currentStatus, TicketStatus newStatus);
 
+    void updateStatus(Connection connection, long ticketId, TicketStatus status);
+
+    void  updateStatusesByDrawIdAndCurrentStatus(
+            Connection connection,
+            long drawId,
+            TicketStatus currentStatus,
+            TicketStatus newStatus
+    );
+
     Ticket save(Ticket ticket);
 }
