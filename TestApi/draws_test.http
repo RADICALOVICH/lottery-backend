@@ -1,0 +1,152 @@
+@host = http://localhost:8080
+
+### ---------------------------------------
+### ADMIN LOGIN
+### ---------------------------------------
+
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "login": "admin",
+  "password": "admin123"
+}
+
+> {%
+    client.global.set("adminToken", response.body.token);
+    client.log("adminToken = " + client.global.get("adminToken"));
+%}
+
+### ---------------------------------------
+### REGISTER USER 1
+### ---------------------------------------
+
+# @name registerUser1
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan",
+  "password": "87654321"
+}
+
+### ---------------------------------------
+### LOGIN USER 1
+### ---------------------------------------
+
+# @name loginUser1
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "login": "ivan",
+  "password": "87654321"
+}
+
+> {%
+    client.global.set("user1Token", response.body.token);
+    client.log("user1Token = " + client.global.get("user1Token"));
+%}
+
+### ---------------------------------------
+### REGISTER USER 2
+### ---------------------------------------
+
+# @name registerUser2
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "login": "marck",
+  "password": "5432555789"
+}
+
+### ---------------------------------------
+### LOGIN USER 2
+### ---------------------------------------
+
+# @name loginUser2
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "login": "marck",
+  "password": "5432555789"
+}
+
+> {%
+    client.global.set("user2Token", response.body.token);
+    client.log("user2Token = " + client.global.get("user2Token"));
+%}
+
+### ---------------------------------------
+### CREATE DRAW
+### ---------------------------------------
+
+# @name createDraw
+POST {{host}}/admin/draws
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Draw HTTP Auto Test",
+  "endDate": "2026-04-25T18:00:00+03:00",
+  "totalTickets": 5
+}
+
+> {%
+    client.global.set("drawId", response.body.id);
+    client.log("drawId = " + client.global.get("drawId"));
+%}
+
+### ---------------------------------------
+### BUY TICKETS
+### ---------------------------------------
+
+# @name buyTicketUser1
+POST {{host}}/draws/{{drawId}}/tickets
+Authorization: Bearer {{user1Token}}
+
+### ---------------------------------------
+
+# @name buyTicketUser2
+POST {{host}}/draws/{{drawId}}/tickets
+Authorization: Bearer {{user2Token}}
+
+### ---------------------------------------
+
+# @name buyTicketAdmin
+POST {{host}}/draws/{{drawId}}/tickets
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------
+### MANUAL STEP
+### ---------------------------------------
+### Before the next request, move draw {{drawId}} to CLOSED
+### through DB or wait for scheduler.
+
+### ---------------------------------------
+### RUN DRAW
+### ---------------------------------------
+
+# @name runDraw
+POST {{host}}/admin/draws/{{drawId}}/run-draw
+Authorization: Bearer {{adminToken}}
+
+### ---------------------------------------
+### CHECK RESULTS
+### ---------------------------------------
+
+# @name getAllDraws
+GET {{host}}/draws
+
+### ---------------------------------------
+
+# @name getDrawById
+GET {{host}}/draws/{{drawId}}
+
+### ---------------------------------------
+
+# @name getDrawResult
+GET {{host}}/draws/{{drawId}}/result
