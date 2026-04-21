@@ -8,6 +8,10 @@ import com.team.lottery.draws.controller.DrawController;
 import com.team.lottery.draws.repository.*;
 import com.team.lottery.draws.scheduler.DrawScheduler;
 import com.team.lottery.draws.service.DrawService;
+import com.team.lottery.ticket.controller.TicketController;
+import com.team.lottery.ticket.repository.TicketJdbcRepository;
+import com.team.lottery.ticket.repository.TicketRepository;
+import com.team.lottery.ticket.service.TicketService;
 import com.team.lottery.users.controller.AuthController;
 import com.team.lottery.users.controller.UserController;
 import com.team.lottery.users.repository.UserRepository;
@@ -18,13 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.team.lottery.draws.repository.DrawResultRepository;
 import com.team.lottery.common.health.HealthController;
-import com.team.lottery.ticket.controller.TicketController;
-import com.team.lottery.ticket.repository.TicketJdbcRepository;
-import com.team.lottery.ticket.repository.TicketRepository;
-import com.team.lottery.ticket.service.TicketService;
 
 import javax.sql.DataSource;
-
 
 /**
  * Application entry point.
@@ -58,7 +57,7 @@ public final class Application {
         // Ticket repository initialization
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository);
-        TicketController ticketController = new TicketController(ticketService);
+        TicketController ticketController = new TicketController(ticketService, tokenService);
 
         //Draw repository initialization
         DrawRepository drawRepository = new JdbcDrawRepository(ds);
@@ -75,7 +74,6 @@ public final class Application {
             // health routes
             routes.get("/", ctx -> ctx.result("Server is running"));
             healthController.registerRoutes(routes);
-
 
             // auth routes
             authController.registerRoutes(routes);

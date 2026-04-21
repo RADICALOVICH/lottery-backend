@@ -15,8 +15,6 @@ public interface TicketRepository {
 
     List<Ticket> findByDrawId(long drawId);
 
-    List<Ticket> findSoldByDrawId(long drawId);
-
     Optional<Ticket> findAnyAvailableByDrawIdForUpdate(Connection connection, long drawId);
 
     boolean buyTicket(Connection connection, long ticketId, long userId);
@@ -35,4 +33,6 @@ public interface TicketRepository {
     );
 
     Ticket save(Ticket ticket);
+
+    void createTickets(long drawId, int totalTickets);
 }

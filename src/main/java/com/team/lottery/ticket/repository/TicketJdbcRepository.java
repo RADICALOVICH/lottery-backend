@@ -98,31 +98,7 @@ public class TicketJdbcRepository implements TicketRepository {
         }
     }
 
-    @Override
-    public List<Ticket> findSoldByDrawId(long drawId) {
-        String sql = """
-                SELECT id, draw_id, owner_id, ticket_number, status, created_at
-                FROM tickets
-                WHERE draw_id = ? AND status = 'SOLD'
-                ORDER BY ticket_number
-                """;
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setLong(1, drawId);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                List<Ticket> tickets = new ArrayList<>();
-                while (rs.next()) {
-                    tickets.add(mapRow(rs));
-                }
-                return tickets;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find sold tickets by draw id: " + drawId, e);
-        }
-    }
 
     @Override
     public Optional<Ticket> findAnyAvailableByDrawIdForUpdate(Connection connection, long drawId) {
@@ -165,6 +141,7 @@ public class TicketJdbcRepository implements TicketRepository {
             throw new RuntimeException("Failed to buy ticket id: " + ticketId, e);
         }
     }
+
 
     @Override
     public void updateStatus(long ticketId, TicketStatus status) {
@@ -227,6 +204,29 @@ public class TicketJdbcRepository implements TicketRepository {
             throw new RuntimeException("Failed to update ticket statuses for draw id: " + drawId, e);
         }
     }
+
+    @Override
+    public void createTickets(long drawId, int totalTickets) {
+        String sql = """
+            INSERT INTO tickets (draw_id, owner_id, ticket_number, status)
+            VALUES (?, NULL, ?, 'AVAILABLE')
+            """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            for (int i = 1; i <= totalTickets; i++) {
+                ps.setLong(1, drawId);
+                ps.setInt(2, i);
+                ps.addBatch();
+            }
+
+            ps.executeBatch();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to create tickets for draw: " + drawId, e);
+        }
+    }
+
 
     @Override
     public void updateStatus(Connection connection, long ticketId, TicketStatus status) {

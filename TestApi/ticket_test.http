@@ -1,0 +1,135 @@
+@host = http://localhost:8080
+@ticketId = 1
+
+###---------------------------------------
+### REGISTER / LOGIN USER
+###---------------------------------------
+
+# @name registerUser
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "login": "ticket_user",
+  "password": "12345678"
+}
+
+###
+
+# @name loginUser
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "login": "ticket_user",
+  "password": "12345678"
+}
+
+> {%
+    client.global.set("userToken", response.body.token);
+    client.log("userToken = " + client.global.get("userToken"));
+%}
+
+###---------------------------------------
+### REGISTER / LOGIN ADMIN
+###---------------------------------------
+
+# @name registerAdmin
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "login": "ticket_admin",
+  "password": "12345678"
+}
+
+###
+
+# @name loginAdmin
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "login": "ticket_admin",
+  "password": "12345678"
+}
+
+> {%
+    client.global.set("adminToken", response.body.token);
+    client.log("adminToken = " + client.global.get("adminToken"));
+%}
+
+###---------------------------------------
+### OPTIONAL SECOND USER
+###---------------------------------------
+
+# @name registerUser2
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "login": "ticket_user_2",
+  "password": "12345678"
+}
+
+###
+
+# @name loginUser2
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "login": "ticket_user_2",
+  "password": "12345678"
+}
+
+> {%
+    client.global.set("user2Token", response.body.token);
+    client.log("user2Token = " + client.global.get("user2Token"));
+%}
+
+###---------------------------------------
+### CREATE DRAW
+###---------------------------------------
+
+# @name createDraw
+POST {{host}}/admin/draws
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Ticket Module Test Draw",
+  "endDate": "2026-04-25T18:00:00+03:00",
+  "totalTickets": 5
+}
+
+###---------------------------------------
+### BUY TICKET
+###---------------------------------------
+
+# @name buyTicketSuccess
+POST {{host}}/draws/1/tickets
+Authorization: Bearer {{userToken}}
+
+###
+
+# @name buySecondTicketSameUser
+POST {{host}}/draws/1/tickets
+Authorization: Bearer {{userToken}}
+
+###
+
+# @name buyTicketByAnotherUser
+POST {{host}}/draws/1/tickets
+Authorization: Bearer {{user2Token}}
+
+###
+
+# @name buyWithoutAuth
+POST {{host}}/draws/1/tickets
+
+###
+
+# @name buyWithWrongToken
+POST {{host}}/draws/1/tickets
+Authorization: Bearer wrong-token
