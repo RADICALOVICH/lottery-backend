@@ -3,6 +3,9 @@ package com.team.lottery.ticket.service;
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.ForbiddenException;
 import com.team.lottery.common.errors.NotFoundException;
+import com.team.lottery.draws.model.Draw;
+import com.team.lottery.draws.model.DrawStatus;
+import com.team.lottery.draws.repository.DrawRepository;
 import com.team.lottery.ticket.model.Ticket;
 import com.team.lottery.ticket.model.TicketStatus;
 import com.team.lottery.ticket.repository.TicketRepository;
@@ -16,10 +19,12 @@ public class TicketService {
 
     private final DataSource dataSource;
     private final TicketRepository ticketRepository;
+    private final DrawRepository drawRepository;
 
-    public TicketService(DataSource dataSource, TicketRepository ticketRepository) {
+    public TicketService(DataSource dataSource, TicketRepository ticketRepository, DrawRepository drawRepository) {
         this.dataSource = dataSource;
         this.ticketRepository = ticketRepository;
+        this.drawRepository = drawRepository;
     }
 
     public void generateTickets(long drawId, int totalTickets) {
@@ -27,6 +32,13 @@ public class TicketService {
     }
 
     public Ticket buyTicket(long drawId, long userId) {
+        Draw draw = drawRepository.findById(drawId)
+                .orElseThrow(() -> new NotFoundException("Draw not found"));
+
+        if (draw.getStatus() != DrawStatus.ACTIVE) {
+            throw new ConflictException("Tickets can be bought only for ACTIVE draws");
+        }
+
         try (Connection connection = dataSource.getConnection()) {
             connection.setAutoCommit(false);
 

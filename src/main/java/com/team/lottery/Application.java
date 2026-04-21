@@ -54,6 +54,20 @@ public final class Application {
         AuthController authController = new AuthController(userRepository, tokenService);
         UserController userController = new UserController(userRepository, tokenService);
 
+        //Draw repository initialization
+        DrawRepository drawRepository = new JdbcDrawRepository(ds);
+        DrawResultRepository drawResultRepository = new JdbcDrawResultRepository(ds);
+
+        // Ticket repository initialization
+        TicketRepository ticketRepository = new TicketJdbcRepository(ds);
+        TicketService ticketService = new TicketService(ds, ticketRepository, drawRepository);
+        TicketController ticketController = new TicketController(ticketService, tokenService);
+
+        DrawService drawService = new DrawService(ds, drawRepository, drawResultRepository, ticketRepository);
+        DrawController drawController = new DrawController(drawService);
+        AdminDrawController adminDrawController = new AdminDrawController(drawService, userRepository, tokenService);
+
+/*
         // Ticket repository initialization
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository);
@@ -65,6 +79,7 @@ public final class Application {
         DrawService drawService = new DrawService(ds, drawRepository, drawResultRepository, ticketRepository);
         DrawController drawController = new DrawController(drawService);
         AdminDrawController adminDrawController = new AdminDrawController(drawService, userRepository, tokenService);
+*/
 
         DrawScheduler drawScheduler = new DrawScheduler(drawRepository, drawService);
 

@@ -1,5 +1,6 @@
 @host = http://localhost:8080
 @ticketId = 1
+@drawId = 1
 
 ###---------------------------------------
 ### REGISTER / LOGIN USER
@@ -39,8 +40,8 @@ POST {{host}}/auth/register
 Content-Type: application/json
 
 {
-  "login": "ticket_admin",
-  "password": "12345678"
+  "login": "admin",
+  "password": "admin123"
 }
 
 ###
@@ -50,8 +51,8 @@ POST {{host}}/auth/login
 Content-Type: application/json
 
 {
-  "login": "ticket_admin",
-  "password": "12345678"
+  "login": "admin",
+  "password": "admin123"
 }
 
 > {%
@@ -103,33 +104,120 @@ Authorization: Bearer {{adminToken}}
   "totalTickets": 5
 }
 
+> {%
+    client.global.set("drawId", response.body.id);
+    client.log("drawId = " + client.global.get("drawId"));
+%}
+
+###---------------------------------------
+### GET CREATED DRAW
+###---------------------------------------
+
+# @name getCreatedDraw
+GET {{host}}/draws/{{drawId}}
+
 ###---------------------------------------
 ### BUY TICKET
 ###---------------------------------------
 
 # @name buyTicketSuccess
-POST {{host}}/draws/1/tickets
+POST {{host}}/draws/{{drawId}}/tickets
 Authorization: Bearer {{userToken}}
 
 ###
 
 # @name buySecondTicketSameUser
-POST {{host}}/draws/1/tickets
+POST {{host}}/draws/{{drawId}}/tickets
 Authorization: Bearer {{userToken}}
 
 ###
 
 # @name buyTicketByAnotherUser
-POST {{host}}/draws/1/tickets
+POST {{host}}/draws/{{drawId}}/tickets
 Authorization: Bearer {{user2Token}}
 
 ###
 
 # @name buyWithoutAuth
-POST {{host}}/draws/1/tickets
+POST {{host}}/draws/{{drawId}}/tickets
 
 ###
 
 # @name buyWithWrongToken
-POST {{host}}/draws/1/tickets
+POST {{host}}/draws/{{drawId}}/tickets
 Authorization: Bearer wrong-token
+
+###---------------------------------------
+### MY TICKETS / RESULTS
+###---------------------------------------
+
+# @name myTickets
+GET {{host}}/me/tickets
+Authorization: Bearer {{userToken}}
+
+###
+
+# @name myResultsBeforeDraw
+GET {{host}}/me/results
+Authorization: Bearer {{userToken}}
+
+###---------------------------------------
+### DRAWS LIST
+###---------------------------------------
+
+# @name allDraws
+GET {{host}}/draws
+
+###
+
+# @name activeDraws
+GET {{host}}/draws?status=ACTIVE
+
+###
+
+# @name closedDraws
+GET {{host}}/draws?status=CLOSED
+
+###
+
+# @name completedDraws
+GET {{host}}/draws?status=COMPLETED
+
+###---------------------------------------
+### CLOSE DRAW
+###---------------------------------------
+### ВАЖНО:
+### В текущем коде контроллеров отдельного HTTP endpoint для закрытия тиража не найдено.
+### Этот блок - заготовка. Запускать только если вы добавите такой маршрут на бэкенде.
+
+# @name closeDrawPlaceholder
+POST {{host}}/admin/draws/{{drawId}}/close
+Authorization: Bearer {{adminToken}}
+
+###---------------------------------------
+### RUN DRAW
+###---------------------------------------
+### run-draw существует в текущем AdminDrawController,
+### но DrawService требует, чтобы тираж уже был CLOSED.
+
+# @name runDraw
+POST {{host}}/admin/draws/{{drawId}}/run-draw
+Authorization: Bearer {{adminToken}}
+
+###---------------------------------------
+### DRAW RESULT
+###---------------------------------------
+
+# @name getDrawResult
+GET {{host}}/draws/{{drawId}}/result
+
+###
+
+# @name getDrawAfterRun
+GET {{host}}/draws/{{drawId}}
+
+###
+
+# @name myResultsAfterDraw
+GET {{host}}/me/results
+Authorization: Bearer {{userToken}}
