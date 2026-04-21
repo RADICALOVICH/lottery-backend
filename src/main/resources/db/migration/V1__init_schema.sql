@@ -37,7 +37,8 @@ CREATE TABLE tickets (
     CONSTRAINT uq_ticket_number UNIQUE (draw_id, ticket_number),
     CONSTRAINT chk_owner_status CHECK (
         (status = 'AVAILABLE' AND owner_id IS NULL) OR
-        (status != 'AVAILABLE' AND owner_id IS NOT NULL)
+        (status IN ('SOLD', 'LOSE') AND owner_id IS NOT NULL)
+        OR (status = 'WIN')
     )
 );
 
