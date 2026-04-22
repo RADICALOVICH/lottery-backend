@@ -22,9 +22,7 @@ public final class JavalinConfig {
                 mapper.registerModule(new JavaTimeModule());
                 mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             }));
-
             routesRegister.accept(config.routes);
-
             ErrorHandler.register(config);
         });
     }
