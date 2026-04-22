@@ -40,6 +40,40 @@ Content-Type: application/json
   "login": "andrey",
   "password": "1234567891"
 }
+
+###
+# @name registerIvan
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "ivan",
+  "password": "87654321"
+}
+
+
+
+###
+# @name registerMark
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "marck",
+  "password": "5432555789"
+}
+
+
+###
+# @name registerAndrey
+POST http://localhost:8080/auth/register
+Content-Type: application/json
+
+{
+  "login": "andrey",
+  "password": "1234567891"
+}
+
 ###
 # @name registerAdmin
 POST http://localhost:8080/auth/register
@@ -47,7 +81,7 @@ Content-Type: application/json
 
 {
 "login": "admin",
-"password": "123456789"
+"password": "admin123"
 }
 
 ###--------------------------------------- ###
