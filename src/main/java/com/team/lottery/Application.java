@@ -61,7 +61,7 @@ public final class Application {
         // Ticket repository initialization
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository, drawRepository);
-        TicketController ticketController = new TicketController(ticketService, tokenService);
+        TicketController ticketController = new TicketController(ticketService, userRepository, tokenService);
 
         DrawService drawService = new DrawService(ds, drawRepository, drawResultRepository, ticketRepository);
         DrawController drawController = new DrawController(drawService);
