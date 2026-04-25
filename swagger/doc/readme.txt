@@ -5,14 +5,14 @@ i. Вытянуть готовый образ swagger-ui:
 
 docker pull docker.swagger.io/swaggerapi/swagger-ui
 
-1. Запустить Spring Boot проект на порту 8080.
+1. Запустить проект на порту 8080.
 
 2. В терминале перейти в каталог, где располагается spring.yaml.
 
 Пример:
 cd /home/michael/Documents/lottery
 
-3. Запустить сервер Swagger на порту 8081 (чтобы не конфликтовал за порт с проектом на Spring Boot).
+3. Запустить сервер Swagger на порту 8081 (чтобы не конфликтовал за порт с проектом).
 
 sudo docker run --rm -p 8081:8080 \
   -e SWAGGER_JSON=/spec/spring.yaml \
