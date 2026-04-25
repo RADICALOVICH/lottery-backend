@@ -592,3 +592,49 @@ Flyway накатывает всё из `src/main/resources/db/migration/` пр�
 ```
 
 Используется Docker-healthcheck'ом в `Dockerfile` и может быть использован мониторингом.
+
+
+## Swagger
+
+Для корректной работы Swagger в resources/application.properties необходимо задать 
+
+```
+app.isProd=false
+```
+
+Иначе говоря, документация Swagger корректно заработает в любой среде кроме продуктивной (в среде
+разработки и в тестовой среде).
+
+
+Как пользоваться
+
+
+- **Вытянуть готовый образ swagger-ui:**
+
+```
+docker pull docker.swagger.io/swaggerapi/swagger-ui
+```
+
+- **Запустить проект на порту 8080.**
+
+- **В терминале перейти в каталог, где располагается spring.yaml.**
+
+Пример (от корневого каталога проекта):
+
+```
+cd swagger
+```
+
+- **Запустить сервер Swagger на порту 8081 (чтобы не конфликтовал за порт с проектом).**
+
+```
+sudo docker run --rm -p 8081:8080 \
+  -e SWAGGER_JSON=/spec/spring.yaml \
+  -v "$PWD":/spec \
+  --name swaggerui swaggerapi/swagger-ui
+```
+
+- **В браузере http://localhost:8081/**
+
+- **Нажимать Try it out / Execute.** 
+
