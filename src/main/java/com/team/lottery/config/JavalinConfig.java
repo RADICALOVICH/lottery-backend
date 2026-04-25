@@ -14,9 +14,22 @@ public final class JavalinConfig {
     private JavalinConfig() {
     }
 
-    public static Javalin create(int port, Consumer<RoutesConfig> routesRegister) {
+    public static Javalin create(boolean isProd,
+                                 int port,
+                                 Consumer<RoutesConfig> routesRegister) {
         return Javalin.create(config -> {
             config.jetty.port = port;
+
+            // Необходимо для корректной работы Swagger.
+            // Настройка CORS для сред разработки и тестирования.
+            config.bundledPlugins.enableCors(cors -> {
+                cors.addRule(it -> {
+                    if (!isProd) {
+                        it.anyHost(); // Вне продуктивной среды разрешаем всё для удобства.
+                    }
+                });
+            });
+
 
             config.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
                 mapper.registerModule(new JavaTimeModule());

@@ -83,8 +83,11 @@ public final class Application {
 
         DrawScheduler drawScheduler = new DrawScheduler(drawRepository, drawService);
 
+        System.out.println("DEBUG: isProd = " + cfg.isProd()); // Продуктиваная ли среда?
 
-        Javalin app = JavalinConfig.create(cfg.port(), routes -> {
+        Javalin app = JavalinConfig.create(cfg.isProd(),
+                cfg.port(),
+                routes -> {
 
             // health routes
             routes.get("/", ctx -> ctx.result("Server is running"));

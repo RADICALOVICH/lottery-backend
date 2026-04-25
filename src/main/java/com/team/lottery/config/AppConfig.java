@@ -20,7 +20,8 @@ public record AppConfig(
         String dbPassword,
         int dbPoolSize,
         int bcryptCost,
-        int drawSchedulerIntervalSeconds
+        int drawSchedulerIntervalSeconds,
+        boolean isProd
 ) {
 
     private static final String PROPERTIES_FILE = "application.properties";
@@ -35,7 +36,8 @@ public record AppConfig(
                 getString("db.password", "DB_PASSWORD", props),
                 getInt("db.poolSize", "DB_POOL_SIZE", props),
                 getInt("bcrypt.cost", "BCRYPT_COST", props),
-                getInt("draw.scheduler.intervalSeconds", "DRAW_SCHEDULER_INTERVAL_SECONDS", props)
+                getInt("draw.scheduler.intervalSeconds", "DRAW_SCHEDULER_INTERVAL_SECONDS", props),
+                getBoolean("app.isProd", "APP_IS_PROD", props)
         );
     }
 
@@ -78,5 +80,10 @@ public record AppConfig(
                     "Не число в " + propKey + " (ENV: " + envName + "): '" + raw + "'"
             );
         }
+    }
+
+    private static boolean getBoolean(String propKey, String envName, Properties props) {
+        String raw = getString(propKey, envName, props);
+        return Boolean.parseBoolean(raw.trim());
     }
 }
