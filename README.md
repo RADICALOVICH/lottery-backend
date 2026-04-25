@@ -612,7 +612,7 @@ app.isProd=false
 - **Вытянуть готовый образ swagger-ui:**
 
 ```
-docker pull docker.swagger.io/swaggerapi/swagger-ui
+sudo docker pull docker.swagger.io/swaggerapi/swagger-ui
 ```
 
 - **Запустить проект на порту 8080.**
