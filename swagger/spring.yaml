@@ -1,0 +1,1032 @@
+openapi: 3.0.3
+info:
+  title: Lottery Backend.
+  description: "Backend хакатоновой лотереи: регистрация пользователей, создание тиражей, продажа билетов и выбор победителя."
+  version: 1.0.0
+  contact:
+    name: Lottery Team
+servers:
+  - url: http://localhost:8080
+    description: Development server
+tags:
+  - name: Authentication
+    description: Регистрация и базовая аутентификация
+  - name: Draws
+    description: Управление тиражами (создание, список, результат)
+  - name: Tickets
+    description: Продажа билетов, статусы билетов
+  - name: Health
+    description: Health‑check системы
+  - name: Admin
+    description: Админские операции (требуют JWT ADMIN)
+  - name: User
+    description: Пользовательские операции (требуют JWT USER)
+
+paths:
+
+# Readme.md
+# Цитата: Приложение слушает http://localhost:8080. Health-check: GET /health.
+# HealthController.java ← HTTP-ручка /health (status=UP, service=lottery-api)
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health-check сервиса
+      description: Проверяет, что приложение работает. HealthController возвращает status=UP.
+      responses:
+        "200":
+          description: Сервис доступен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponseV1"
+              example:
+                status: UP
+                service: lottery-api
+
+# HealthController.java ← HTTP-ручка /health/db (DataSource.isValid())
+  /health/db:
+    get:
+      tags:
+        - Health
+      summary: Health-check базы данных
+      description: Проверяет подключение к БД. HealthController возвращает dbName, dbUser, database=CONNECTED.
+      responses:
+        "200":
+          description: База данных доступна
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthDbResponse"
+              example:
+                status: UP
+                database: CONNECTED
+                dbName: lottery
+                dbUser: postgres
+        "503":
+          description: База данных недоступна
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthDbErrorResponse"
+              example:
+                status: DOWN
+                database: DISCONNECTED
+                error: Connection timeout
+
+# AuthController.java ← HTTP-ручка POST /auth/register
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Регистрация нового пользователя
+      description: "Создает нового пользователя с ролью USER. Повторяющийся логин возвращает 409."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              login: alice
+              password: supersecret123
+      responses:
+        "201":
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+              example:
+                id: 1
+                login: alice
+                message: "User registered successfully"
+        "400":
+          description: Невалидный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+              example:
+                code: VALIDATION_FAILED
+                message: "login must not be blank"
+        "409":
+          description: Логин уже занят
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# AuthController.java ← HTTP-ручка POST /auth/login
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Авторизация пользователя
+      description: "Аутентифицирует пользователя и возвращает JWT токен. Если уже авторизован - возвращает существующий токен."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              login: alice
+              password: supersecret123
+      responses:
+        "200":
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+              example:
+                message: "Login successful"
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                id: 1
+                login: alice
+                role: USER
+        "401":
+          description: Неверный логин/пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# AuthController.java ← HTTP-ручка POST /auth/logout
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Выход из системы
+      description: "Удаляет JWT токен пользователя из сессии."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Успешный выход
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
+              example:
+                message: "Logout successful"
+        "401":
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# UserController.java ← HTTP-ручка GET /users/me (требует JWT)
+  /users/me:
+    get:
+      tags:
+        - User
+      summary: Информация о текущем пользователе
+      description: "Возвращает данные текущего авторизованного пользователя. Требуется JWT токен."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные пользователя
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+              example:
+                id: 1
+                login: alice
+                role: USER
+        "401":
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# UserController.java ← HTTP-ручка GET /users (требует ADMIN JWT)
+  /users:
+    get:
+      tags:
+        - Admin
+        - User
+      summary: Список всех пользователей (админ)
+      description: "Только ADMIN может получить список всех пользователей. Требуется JWT токен ADMIN."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список всех пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserListResponse"
+        "401":
+          description: Не авторизован или не ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# UserController.java ← HTTP-ручка GET /admin/ping (требует ADMIN JWT)
+  /admin/ping:
+    get:
+      tags:
+        - Admin
+      summary: Проверка ADMIN доступа
+      description: "Тестовый endpoint для проверки ADMIN прав. Требуется JWT токен ADMIN."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: ADMIN доступ подтвержден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPingResponse"
+              example:
+                message: "Admin access granted"
+                login: admin
+                role: ADMIN
+        "401":
+          description: Не авторизован или не ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# UserController.java ← HTTP-ручка GET /admin/logged-in-users (требует ADMIN JWT)
+  /admin/logged-in-users:
+    get:
+      tags:
+        - Admin
+      summary: Активные пользователи (админ)
+      description: "Только ADMIN может получить список всех авторизованных пользователей. Требуется JWT токен ADMIN."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список активных пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserListResponse"
+        "401":
+          description: Не авторизован или не ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# AdminDrawController.java ← HTTP-ручка POST /admin/draws (требует ADMIN JWT)
+  /admin/draws:
+    post:
+      tags:
+        - Admin
+        - Draws
+      summary: Создать новый тираж (админ)
+      description: "Только ADMIN может создавать тираж. Требуется JWT токен с ролью ADMIN. Все билеты генерируются в статусе AVAILABLE."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDrawRequest"
+            example:
+              title: "Тираж #1"
+              totalTickets: 1000
+              deadlineAt: "2026-04-25T18:00:00Z"
+      responses:
+        "201":
+          description: Тираж успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrawResponse"
+        "400":
+          description: Невалидные параметры
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "401":
+          description: Не авторизован или не ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# AdminDrawController.java ← HTTP-ручка POST /admin/draws/{id}/run-draw (требует ADMIN JWT)
+  /admin/draws/{id}/run-draw:
+    post:
+      tags:
+        - Admin
+        - Draws
+      summary: Провести розыгрыш тиража (админ)
+      description: "Только ADMIN может запустить розыгрыш. Требуется JWT токен с ролью ADMIN. Меняет статус тиража на COMPLETED и выбирает победителя."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID тиража для розыгрыша
+      responses:
+        "200":
+          description: Розыгрыш успешно проведен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrawResponse"
+        "400":
+          description: Нельзя провести розыгрыш
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "401":
+          description: Не авторизован или не ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "404":
+          description: Тираж не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+  /draws:
+# Readme.md
+# Цитата: DrawController.java ← HTTP-ручка GET /draws?status=ACTIVE
+    get:
+      tags:
+        - Draws
+      summary: Получить список тиражей
+      description: "Список всех тиражей с фильтрацией по статусу (ACTIVE, CLOSED, COMPLETED)."
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - CLOSED
+              - COMPLETED
+          description: Фильтр по статусу тиража
+      responses:
+        "200":
+          description: Список тиражей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DrawDto"
+
+# Readme.md
+# Цитата: DrawController.java ← HTTP-ручки /draws/*
+  /draws/{drawId}:
+    get:
+      tags:
+        - Draws
+      summary: Получить тираж по ID
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Информация о тираже
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrawDto"
+        "404":
+          description: Тираж не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# DrawController.java ← HTTP-ручка GET /draws/{drawId}/result
+  /draws/{drawId}/result:
+    get:
+      tags:
+        - Draws
+      summary: Получить результат розыгрыша
+      description: "Возвращает результат розыгрыша (победителя) для конкретного тиража."
+      parameters:
+        - name: drawId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Результат розыгрыша
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrawResultDto"
+        "404":
+          description: Тираж или результат не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# TicketController.java ← HTTP-ручка POST /draws/{id}/tickets (требует USER JWT)
+  /draws/{id}/tickets:
+    post:
+      tags:
+        - Tickets
+        - User
+      summary: Купить билет в тираж (пользователь)
+      description: "Пользователь покупает случайный доступный билет в указанном тираже. Требуется JWT токен USER."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID тиража
+      responses:
+        "200":
+          description: Билет успешно куплен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyTicketResponseV2"
+        "400":
+          description: Невозможно купить билет
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "401":
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "404":
+          description: Тираж не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# TicketController.java ← HTTP-ручка GET /me/tickets (требует USER JWT)
+  /me/tickets:
+    get:
+      tags:
+        - Tickets
+        - User
+      summary: Мои билеты
+      description: "Возвращает все билеты текущего пользователя. Требуется JWT токен USER."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список билетов пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketResponse"
+        "401":
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# TicketController.java ← HTTP-ручка GET /me/results (требует USER JWT)
+  /me/results:
+    get:
+      tags:
+        - Tickets
+        - User
+      summary: Мои результаты
+      description: "Возвращает результаты розыгрышей для билетов текущего пользователя (WIN/LOSE). Требуется JWT токен USER."
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Список результатов пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketResponse"
+        "401":
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# Readme.md
+# Цитата: GET /tickets?drawId=1&status=AVAILABLE (админский список билетов)
+  /tickets:
+    get:
+      tags:
+        - Tickets
+      summary: Получить список билетов
+      description: "Список всех билетов с фильтрацией по drawId и status."
+      parameters:
+        - name: drawId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - AVAILABLE
+              - SOLD
+              - WIN
+              - LOSE
+      responses:
+        "200":
+          description: Список билетов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketDto"
+
+# Readme.md
+# Цитата: TicketController.java ← HTTP-ручки /tickets/*
+  /tickets/{ticketId}/buy:
+    post:
+      tags:
+        - Tickets
+      summary: Купить билет
+      description: "Покупает билет (переход из AVAILABLE в SOLD). ID покупателя обычно берётся из JWT или сессии и не передаётся в теле."
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Билет успешно куплен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyTicketResponse"
+        "400":
+          description: Невозможно купить билет (например, билет уже куплен)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "404":
+          description: Билет не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    # HealthController.java ← реальный ответ GET /health
+    HealthResponseV1:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+          example: UP
+        service:
+          type: string
+          example: lottery-api
+      required:
+        - status
+        - service
+
+    # HealthController.java ← реальный ответ GET /health/db (успех)
+    HealthDbResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+        database:
+          type: string
+          enum: [CONNECTED, DISCONNECTED]
+        dbName:
+          type: string
+        dbUser:
+          type: string
+      required:
+        - status
+        - database
+        - dbName
+        - dbUser
+
+    # HealthController.java ← реальный ответ GET /health/db (ошибка)
+    HealthDbErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+        database:
+          type: string
+          enum: [CONNECTED, DISCONNECTED]
+        error:
+          type: string
+      required:
+        - status
+        - database
+        - error
+
+    # AuthController.java ← запрос POST /auth/register, POST /auth/login
+    RegisterRequest:
+      type: object
+      properties:
+        login:
+          type: string
+          minLength: 3
+          maxLength: 64
+          description: "Логин пользователя. Должен быть уникальным."
+          example: alice
+        password:
+          type: string
+          minLength: 8
+          description: "Пароль пользователя. Не возвращается в ответах."
+          example: supersecret123
+      required:
+        - login
+        - password
+
+    # AuthController.java ← запрос POST /auth/login
+    LoginRequest:
+      type: object
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+      required:
+        - login
+        - password
+
+    # AuthController.java ← реальный ответ POST /auth/register
+    RegisterResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        login:
+          type: string
+        message:
+          type: string
+      required:
+        - id
+        - login
+        - message
+
+    # AuthController.java ← реальный ответ POST /auth/login
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        token:
+          type: string
+        id:
+          type: integer
+          format: int64
+        login:
+          type: string
+        role:
+          type: string
+      required:
+        - message
+        - token
+        - id
+        - login
+        - role
+
+    # AuthController.java ← реальный ответ POST /auth/logout
+    LogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # UserController.java ← реальный ответ GET /users/me
+    MeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        login:
+          type: string
+        role:
+          type: string
+      required:
+        - id
+        - login
+        - role
+
+    # UserController.java ← реальный ответ GET /users, /admin/logged-in-users
+    UserListResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        login:
+          type: string
+        role:
+          type: string
+      required:
+        - id
+        - login
+        - role
+
+    # UserController.java ← реальный ответ GET /admin/ping
+    AdminPingResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        login:
+          type: string
+        role:
+          type: string
+      required:
+        - message
+        - login
+        - role
+
+    CreateDrawRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Тираж #1"
+        totalTickets:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          example: 1000
+        deadlineAt:
+          type: string
+          format: date-time
+          example: "2026-04-25T18:00:00Z"
+      required:
+        - title
+        - totalTickets
+        - deadlineAt
+
+    DrawStatus:
+      type: string
+      enum: [ACTIVE, CLOSED, COMPLETED]
+
+    DrawDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        totalTickets:
+          type: integer
+          format: int32
+        deadlineAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/DrawStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - totalTickets
+        - deadlineAt
+        - status
+        - createdAt
+
+    DrawResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        totalTickets:
+          type: integer
+          format: int32
+        deadlineAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/DrawStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - totalTickets
+        - deadlineAt
+        - status
+        - createdAt
+
+    DrawResultDto:
+      type: object
+      properties:
+        drawId:
+          type: integer
+          format: int64
+        winnerUserId:
+          type: integer
+          format: int64
+        winnerUserName:
+          type: string
+        winnerTicketId:
+          type: integer
+          format: int64
+        winnerTicketNumber:
+          type: integer
+          format: int32
+        drawTitle:
+          type: string
+        drawDeadline:
+          type: string
+          format: date-time
+        drawStatus:
+          $ref: "#/components/schemas/DrawStatus"
+        resultCreatedAt:
+          type: string
+          format: date-time
+      required:
+        - drawId
+        - winnerUserId
+        - winnerUserName
+        - winnerTicketId
+        - winnerTicketNumber
+        - drawTitle
+        - drawDeadline
+        - drawStatus
+        - resultCreatedAt
+
+    TicketStatus:
+      type: string
+      enum: [AVAILABLE, SOLD, WIN, LOSE]
+
+    TicketDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        drawId:
+          type: integer
+          format: int64
+        ticketNumber:
+          type: integer
+          format: int32
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+        drawTitle:
+          type: string
+        drawStatus:
+          $ref: "#/components/schemas/DrawStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - drawId
+        - ticketNumber
+        - status
+        - drawTitle
+        - drawStatus
+        - createdAt
+
+    TicketResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        drawId:
+          type: integer
+          format: int64
+        ticketNumber:
+          type: integer
+          format: int32
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        ownerId:
+          type: integer
+          format: int64
+        drawTitle:
+          type: string
+        drawStatus:
+          $ref: "#/components/schemas/DrawStatus"
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - drawId
+        - ticketNumber
+        - status
+        - ownerId
+        - drawTitle
+        - drawStatus
+        - createdAt
+
+    BuyTicketResponseV2:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Ticket purchased successfully"
+        ticket:
+          $ref: "#/components/schemas/TicketResponse"
+      required:
+        - message
+        - ticket
+
+    BuyTicketResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        ticket:
+          $ref: "#/components/schemas/TicketDto"
+      required:
+        - success
+        - ticket
+
+    ErrorResponseBody:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - VALIDATION_FAILED
+            - CONFLICT
+            - NOT_FOUND
+            - UNAUTHORIZED
+        message:
+          type: string
+      required:
+        - code
+        - message
