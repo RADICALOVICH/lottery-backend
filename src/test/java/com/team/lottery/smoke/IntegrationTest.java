@@ -1,5 +1,8 @@
 package com.team.lottery.smoke;
 
+import com.team.lottery.Application;
+import com.team.lottery.config.AppConfig;
+import io.javalin.Javalin;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,10 +15,17 @@ import static org.hamcrest.Matchers.equalTo;
 @Testcontainers
 public class IntegrationTest {
 
+    private Javalin app;
+    private int port;
+
     @BeforeEach
     public void setUp() {
+        AppConfig cfg = AppConfig.load();
+        port = cfg.port();  // ← порт из application.properties
+
+        app = Application.start(port);
         RestAssured.baseURI = "http://localhost";
-        RestAssured.port = 8080;
+        RestAssured.port = port;
     }
 
     @Test
