@@ -57,6 +57,8 @@ public class AuthController {
     }
 
     public void login(Context ctx) throws Exception {
+        String successMsg = "User is already logged in";
+        String failureMsg = "Invalid login or password";
         LoginRequest request = ctx.bodyAsClass(LoginRequest.class);
 
         String loginError = AuthValidationUtil.validateLogin(request.getLogin());
@@ -73,7 +75,7 @@ public class AuthController {
 
         UserAuthData user = userRepository.findByLogin(login);
         if (user == null) {
-            throw new UnauthorizedException("Invalid login or password");
+            throw new UnauthorizedException(failureMsg);
         }
 
         boolean passwordMatches = PasswordUtil.matches(
@@ -82,14 +84,14 @@ public class AuthController {
         );
 
         if (!passwordMatches) {
-            throw new UnauthorizedException("Invalid login or password");
+            throw new UnauthorizedException(failureMsg);
         }
 
         if (tokenService.hasToken(user.getId())) {
             String existingToken = tokenService.getTokenByUserId(user.getId());
 
             ctx.status(200).json(Map.of(
-                    "message", "User is already logged in",
+                    "message", successMsg,
                     "token", existingToken,
                     "id", user.getId(),
                     "login", user.getLogin(),
@@ -101,7 +103,7 @@ public class AuthController {
         String token = tokenService.generateOrGetToken(user.getId());
 
         ctx.status(200).json(Map.of(
-                "message", "Login successful",
+                "message", successMsg,
                 "token", token,
                 "id", user.getId(),
                 "login", user.getLogin(),
