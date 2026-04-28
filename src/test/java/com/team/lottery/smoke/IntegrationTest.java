@@ -1160,29 +1160,49 @@ public class IntegrationTest {
     @Test
     public void getUserResults() {
         /*
-         * Сценарий: Проверка статуса билетов пользователя
-         * 1. Подготовка: Создаем тираж, покупаем билет (уже есть alice), закрываем, запускаем розыгрыш
-         * 2. GET /me/results (используем токен alice)
-         * 3. Проверка: статус билета в списке должен быть WIN или LOSE
+         * Сценарий: Проверка статуса билетов пользователя после розыгрыша
+         * 1. Подготовка: Создаем тираж, покупаем билет для Alice
+         * 2. Розыгрыш: Закрываем тираж и запускаем run-draw
+         * 3. GET /me/results: Проверяем, что билеты имеют статус WIN или LOSE
          */
 
-        // 1. Подготовка (регистрация и покупка)
-        given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/register");
-        String aliceToken = given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/login").then().extract().path("token");
+        // 1. Подготовка: Регистрация Alice и получение токена
+        given().contentType("application/json")
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+        String aliceToken = given().contentType("application/json")
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then().extract().path("token");
 
-        // (Предполагается, что тираж 1 уже существует, если нет - создайте его как в предыдущих тестах)
+        // Регистрация админа и создание тиража
+        given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) { throw new RuntimeException(e); }
+        String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
+                .body("{ \"title\": \"Тираж для результатов\", \"totalTickets\": 10, \"endDate\": \"2027-01-01T00:00:00Z\" }")
+                .post("/admin/draws");
+
+        // Alice покупает билет
         given().header("Authorization", "Bearer " + aliceToken).post("/draws/1/tickets");
 
-        // Проводим розыгрыш (статус -> CLOSED -> COMPLETED)
-        // ... (код изменения статуса в БД и вызова /admin/draws/1/run-draw) ...
+        // 2. Проведение розыгрыша (перевод статусов билетов из SOLD в WIN/LOSE)
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE draws SET status = 'CLOSED' WHERE id = 1");
+        } catch (Exception e) { throw new RuntimeException(e); }
 
-        // 2. Запрос результатов пользователя
+        given().header("Authorization", "Bearer " + adminToken).post("/admin/draws/1/run-draw");
+
+        // 3. Запрос результатов пользователя
         Response response = given()
                 .header("Authorization", "Bearer " + aliceToken)
                 .when()
                 .get("/me/results");
 
-        // 3. Проверка
+        // 4. Проверка: статус должен быть либо WIN, либо LOSE
         response.then()
                 .statusCode(200)
                 .body("[0].status", anyOf(equalTo("WIN"), equalTo("LOSE")));

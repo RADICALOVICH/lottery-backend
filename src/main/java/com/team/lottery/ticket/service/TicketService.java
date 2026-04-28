@@ -76,9 +76,11 @@ public class TicketService {
     }
 
     public List<Ticket> getMyResults(long userId) {
-        return ticketRepository.findByOwnerId(userId).stream()
+        List<Ticket> results = ticketRepository.findByOwnerId(userId).stream()
                 .filter(ticket -> ticket.status() == TicketStatus.WIN || ticket.status() == TicketStatus.LOSE)
                 .toList();
+        System.out.println("Results for user " + userId + ": " + results);
+        return results;
     }
 
     public Ticket getMyTicket(long ticketId, long userId) {
@@ -91,4 +93,6 @@ public class TicketService {
 
         return ticket;
     }
+
+
 }
