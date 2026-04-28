@@ -283,13 +283,30 @@ public class TicketJdbcRepository implements TicketRepository {
         Object owner = rs.getObject("owner_id");
         Long ownerId = owner == null ? null : ((Number) owner).longValue();
 
-        return new Ticket(
-                rs.getLong("id"),
-                rs.getLong("draw_id"),
-                ownerId,
-                rs.getInt("ticket_number"),
-                TicketStatus.valueOf(rs.getString("status")),
-                rs.getTimestamp("created_at").toInstant()
-        );
+        // 1. Get the raw string from the DB
+        String rawStatus = rs.getString("status");
+
+        // 2. Validate that it is NOT null before trying to convert it
+        if (rawStatus == null) {
+            throw new IllegalStateException("Database integrity error: Ticket ID " +
+                    rs.getLong("id") + " has a NULL status in the database.");
+        }
+
+        try {
+            // 3. Convert to Enum (Trim/Uppercase to be safe)
+            TicketStatus status = TicketStatus.valueOf(rawStatus.trim().toUpperCase());
+
+            return new Ticket(
+                    rs.getLong("id"),
+                    rs.getLong("draw_id"),
+                    ownerId,
+                    rs.getInt("ticket_number"),
+                    status,
+                    rs.getTimestamp("created_at").toInstant()
+            );
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Unknown status value in database: [" + rawStatus +
+                    "] for ticket ID: " + rs.getLong("id"), e);
+        }
     }
 }

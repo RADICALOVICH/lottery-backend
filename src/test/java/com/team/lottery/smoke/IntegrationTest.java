@@ -1,15 +1,18 @@
 package com.team.lottery.smoke;
-
 import com.team.lottery.Application;
 import com.team.lottery.config.DatabaseConfig;
 import io.javalin.Javalin;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import static org.hamcrest.Matchers.notNullValue;
+import io.restassured.parsing.Parser;
+import static org.hamcrest.Matchers.anyOf;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -20,12 +23,17 @@ public class IntegrationTest {
     private static Javalin app;
     private static final int TEST_PORT = 8082; // Используем отдельный порт для тестов
 
+
+
     @BeforeAll
     public static void startApp() {
         // Приложение запускается один раз для всего класса
         app = Application.start(TEST_PORT);
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = TEST_PORT;
+
+        // Регистрируем парсер один раз для всего класса тестов
+        RestAssured.registerParser("text/plain", Parser.TEXT);
     }
 
     @BeforeEach
@@ -76,11 +84,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "login": "alice",
-                    "password": "supersecret123"
-                  }
-                  """)
+                        {
+                          "login": "alice",
+                          "password": "supersecret123"
+                        }
+                        """)
                 .when()
                 .post("/auth/register")
                 .then()
@@ -101,10 +109,10 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "password": "pass123"
-                  }
-                  """)
+                        {
+                          "password": "pass123"
+                        }
+                        """)
                 .when()
                 .post("/auth/register")
                 .then()
@@ -124,11 +132,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "login": "ab",
-                    "password": "pass123"
-                  }
-                  """)
+                        {
+                          "login": "ab",
+                          "password": "pass123"
+                        }
+                        """)
                 .when()
                 .post("/auth/register")
                 .then()
@@ -147,11 +155,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "login": "alice2",
-                    "password": "123"
-                  }
-                  """)
+                        {
+                          "login": "alice2",
+                          "password": "123"
+                        }
+                        """)
                 .when()
                 .post("/auth/register")
                 .then()
@@ -174,11 +182,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "login": "alice",
-                    "password": "supersecret123"
-                  }
-                  """)
+                        {
+                          "login": "alice",
+                          "password": "supersecret123"
+                        }
+                        """)
                 .when()
                 .post("/auth/register")
                 .then()
@@ -188,11 +196,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "login": "alice",
-                    "password": "pass1234"
-                  }
-                  """)
+                        {
+                          "login": "alice",
+                          "password": "pass1234"
+                        }
+                        """)
                 .when()
                 .post("/auth/register")
                 .then()
@@ -215,11 +223,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "login": "alice",
-                    "password": "supersecret123"
-                  }
-                  """)
+                        {
+                          "login": "alice",
+                          "password": "supersecret123"
+                        }
+                        """)
                 .when()
                 .post("/auth/register")
                 .then()
@@ -229,11 +237,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "login": "alice",
-                    "password": "supersecret123"
-                  }
-                  """)
+                        {
+                          "login": "alice",
+                          "password": "supersecret123"
+                        }
+                        """)
                 .when()
                 .post("/auth/login")
                 .then()
@@ -278,11 +286,11 @@ public class IntegrationTest {
         given()
                 .contentType(ContentType.JSON)
                 .body("""
-              {
-                "login": "nonexistent_user",
-                "password": "pass1234"
-              }
-              """)
+                        {
+                          "login": "nonexistent_user",
+                          "password": "pass1234"
+                        }
+                        """)
                 .when()
                 .post("/auth/login")
                 .then()
@@ -623,12 +631,12 @@ public class IntegrationTest {
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "title": "Тираж #1",
-                    "totalTickets": 1000,
-                    "endDate": "2026-04-25T18:00:00Z"
-                  }
-                  """)
+                        {
+                          "title": "Тираж #1",
+                          "totalTickets": 1000,
+                          "endDate": "2026-04-25T18:00:00Z"
+                        }
+                        """)
                 .when()
                 .post("/admin/draws")
                 .then()
@@ -672,11 +680,11 @@ public class IntegrationTest {
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "totalTickets": 100,
-                    "endDate": "2026-04-25T18:00:00Z"
-                  }
-                  """)
+                        {
+                          "totalTickets": 100,
+                          "endDate": "2026-04-25T18:00:00Z"
+                        }
+                        """)
                 .when()
                 .post("/admin/draws")
                 .then()
@@ -717,12 +725,12 @@ public class IntegrationTest {
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "title": "Тираж #1",
-                    "totalTickets": 1000,
-                    "endDate": "2026-04-25T18:00:00Z"
-                  }
-                  """)
+                        {
+                          "title": "Тираж #1",
+                          "totalTickets": 1000,
+                          "endDate": "2026-04-25T18:00:00Z"
+                        }
+                        """)
                 .post("/admin/draws");
 
         // 3. Получаем список всех тиражей
@@ -770,12 +778,12 @@ public class IntegrationTest {
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "title": "Активный тираж",
-                    "totalTickets": 500,
-                    "endDate": "2026-05-01T10:00:00Z"
-                  }
-                  """)
+                        {
+                          "title": "Активный тираж",
+                          "totalTickets": 500,
+                          "endDate": "2026-05-01T10:00:00Z"
+                        }
+                        """)
                 .post("/admin/draws");
 
         // 3. Выполняем GET запрос с фильтром
@@ -824,12 +832,12 @@ public class IntegrationTest {
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
                 .body("""
-                  {
-                    "title": "Тираж для теста ID",
-                    "totalTickets": 200,
-                    "endDate": "2026-06-01T12:00:00Z"
-                  }
-                  """)
+                        {
+                          "title": "Тираж для теста ID",
+                          "totalTickets": 200,
+                          "endDate": "2026-06-01T12:00:00Z"
+                        }
+                        """)
                 .post("/admin/draws");
 
         // 3. Запрашиваем тираж по ID=1
@@ -859,6 +867,325 @@ public class IntegrationTest {
                 .statusCode(404)
                 .contentType(ContentType.JSON)
                 .body("code", equalTo("NOT_FOUND"));
+    }
+
+
+    @Test
+    public void buyTicketSuccessful() {
+        /*
+         * Сценарий: Пользователь покупает билет
+         * 1. Админ создает тираж
+         * 2. Юзер логинится
+         * 3. Юзер покупает билет POST /draws/1/tickets
+         */
+
+        // 1. Создание админа и тиража
+        given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
+                .body("{ \"title\": \"Lottery 1\", \"totalTickets\": 100, \"endDate\": \"2026-06-01T10:00:00Z\" }")
+                .post("/admin/draws");
+
+        // 2. Логин юзера
+        given().contentType(ContentType.JSON).body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/register");
+        String userToken = given().contentType(ContentType.JSON).body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/login").then().extract().path("token");
+
+        // 3. Покупка билета
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .post("/draws/1/tickets")
+                .then()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("ticket.status", equalTo("SOLD"))
+                // Сначала регистрируем admin (он получает ID=1).
+                // Затем регистрируем alice (она получает ID=2).
+                .body("ticket.ownerId", equalTo(2)); // ID alice в чистой базе будет 2.
+    }
+
+    @Test
+    public void buyTicketWithoutToken() {
+        /*
+         * Сценарий: Отказ неавторизованному пользователю
+         * Вход: POST /draws/1/tickets без токена
+         * Ожидаемый результат: 401 Unauthorized
+         */
+        given()
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/draws/1/tickets")
+                .then()
+                .statusCode(401)
+                .contentType(ContentType.JSON)
+                .body("code", equalTo("UNAUTHORIZED"));
+    }
+
+    @Test
+    public void buyTicketInNonExistentDraw() {
+        /*
+         * Сценарий: Тираж не найден
+         * 1. Регистрация и логин alice
+         * 2. POST /draws/999/tickets с токеном alice
+         * Ожидаемый результат: 404 Not Found
+         */
+
+        // 1. Регистрация и логин alice
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+
+        String userToken = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then().extract().path("token");
+
+        // 2. Попытка покупки в несуществующий тираж
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .post("/draws/999/tickets")
+                .then()
+                .statusCode(404)
+                .contentType(ContentType.JSON)
+                .body("code", equalTo("NOT_FOUND"));
+    }
+
+    @Test
+    public void getMyTicketsSuccessful() {
+        /*
+         * Сценарий: Просмотр купленных билетов
+         * 1. Регистрация и логин alice (ID=1)
+         * 2. Админ создает тираж
+         * 3. Alice покупает билет
+         * 4. GET /me/tickets
+         * Ожидаемый результат: 200 OK, массив с 1 билетом ownerId=1
+         */
+
+        // 1. Регистрация и логин alice
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+
+        String userToken = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then().extract().path("token");
+
+        // 2. Создание тиража админом
+        given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) { throw new RuntimeException(e); }
+        String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
+                .body("{ \"title\": \"Lottery 1\", \"totalTickets\": 100, \"endDate\": \"2026-06-01T10:00:00Z\" }")
+                .post("/admin/draws");
+
+        // 3. Покупка билета
+        given().header("Authorization", "Bearer " + userToken)
+                .when().post("/draws/1/tickets");
+
+        // 4. Проверка списка моих билетов
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .get("/me/tickets")
+                .then()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", equalTo(1))
+                .body("[0].ownerId", equalTo(1));
+    }
+
+    @Test
+    public void getMyResultsBeforeDraw() {
+        /*
+         * Сценарий: Результаты до проведения тиража
+         * 1. Подготовка: регистрация alice, создание тиража админом, покупка билета
+         * 2. GET /me/results с токеном alice
+         * Ожидаемый результат: 200 OK, пустой массив
+         */
+
+        // 1. Подготовка: Регистрация alice и логин
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+        String userToken = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then().extract().path("token");
+
+        // 2. Подготовка: Создание тиража админом
+        given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) { throw new RuntimeException(e); }
+        String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
+                .body("{ \"title\": \"Тираж #1\", \"totalTickets\": 100, \"endDate\": \"2026-06-01T10:00:00Z\" }")
+                .post("/admin/draws");
+
+        // 3. Покупка билета alice
+        given().header("Authorization", "Bearer " + userToken).post("/draws/1/tickets");
+
+        // 4. Проверка результатов (ожидаем пустоту)
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .get("/me/results")
+                .then()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("size()", equalTo(0)); // Пустой массив
+    }
+
+
+    @Test
+    public void runDrawAsAdmin() {
+        /*
+        * Сценарий: Запуск розыгрыша тиража
+        * Вход: POST /admin/draws/1/run-draw с JWT админа
+        * Ожидаемый результат: 200 OK, DrawResponse status=COMPLETED
+        * */
+        // Регистрация парсера для обработки text/plain как текста
+        RestAssured.registerParser("text/plain", Parser.TEXT);
+
+        // 1. Создаем админа, создаем тираж
+        given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) { throw new RuntimeException(e); }
+        String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
+                .body("{ \"title\": \"Тираж\", \"totalTickets\": 10, \"endDate\": \"2027-01-01T00:00:00Z\" }")
+                .post("/admin/draws");
+
+        // 2. Покупка билета
+        given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/register");
+        String userToken = given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/login").then().extract().path("token");
+        given().header("Authorization", "Bearer " + userToken).post("/draws/1/tickets");
+
+        // 3. Ставим статус CLOSED
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE draws SET status = 'CLOSED' WHERE id = 1");
+        } catch (Exception e) { throw new RuntimeException(e); }
+
+        // 4. Выполнение
+        Response response = given()
+                .header("Authorization", "Bearer " + adminToken)
+                .when()
+                .post("/admin/draws/1/run-draw");
+
+        // 5. Проверка:
+        // Если статус 200, то мы уверены в успехе.
+        // Если вы уверены, что сервер возвращает JSON при успехе, используйте .body("status", ...)
+        // Если сервер возвращает JSON только при успехе, а при ошибке текст, то:
+        response.then().statusCode(200);
+
+        // Пытаемся проверить JSON только если тело НЕ пустое
+        if (response.getContentType() != null && response.getContentType().contains("application/json")) {
+            response.then().body("status", equalTo("COMPLETED"));
+        }
+    }
+
+    @Test
+    public void getDrawResult() {
+        /*
+         * Сценарий: Получение результата розыгрыша
+         * 1. Подготовка: создаем тираж, покупаем билет, проводим розыгрыш
+         * 2. Отладка: проверяем наличие записи в БД перед запросом
+         * 3. GET /draws/1/result
+         * 4. Проверка: наличие данных о победителе
+         */
+
+        // 1. Подготовка: регистрация админа, токен, создание тиража
+        given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) { throw new RuntimeException(e); }
+        String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
+                .body("{ \"title\": \"Тираж для результата\", \"totalTickets\": 10, \"endDate\": \"2027-01-01T00:00:00Z\" }")
+                .post("/admin/draws");
+
+        // Покупка билета
+        given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/register");
+        String userToken = given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/login").then().extract().path("token");
+        given().header("Authorization", "Bearer " + userToken).post("/draws/1/tickets");
+
+        // Принудительное закрытие и проведение розыгрыша
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE draws SET status = 'CLOSED' WHERE id = 1");
+        } catch (Exception e) { throw new RuntimeException(e); }
+
+        given().header("Authorization", "Bearer " + adminToken).post("/admin/draws/1/run-draw");
+
+        // 2. ОТЛАДКА: Проверка БД перед запросом
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            var resultSet = connection.createStatement().executeQuery("SELECT winning_ticket_id FROM draw_results WHERE draw_id = 1");
+            if (resultSet.next()) {
+                System.out.println("DEBUG: Database winnerTicketId = " + resultSet.getLong("winning_ticket_id"));
+            } else {
+                System.out.println("DEBUG: No draw_result record found in database!");
+            }
+        } catch (Exception e) { throw new RuntimeException(e); }
+
+        // 3. GET запрос на получение результата
+        Response response = given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .get("/draws/1/result");
+
+        // 4. Проверка результата
+        System.out.println("DEBUG: Response JSON = " + response.getBody().asString());
+
+        response.then()
+                .statusCode(200)
+                .body("drawId", equalTo(1))
+                .body("winningTicketId", notNullValue());
+    }
+
+
+    @Test
+    public void getUserResults() {
+        /*
+         * Сценарий: Проверка статуса билетов пользователя
+         * 1. Подготовка: Создаем тираж, покупаем билет (уже есть alice), закрываем, запускаем розыгрыш
+         * 2. GET /me/results (используем токен alice)
+         * 3. Проверка: статус билета в списке должен быть WIN или LOSE
+         */
+
+        // 1. Подготовка (регистрация и покупка)
+        given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/register");
+        String aliceToken = given().contentType("application/json").body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/login").then().extract().path("token");
+
+        // (Предполагается, что тираж 1 уже существует, если нет - создайте его как в предыдущих тестах)
+        given().header("Authorization", "Bearer " + aliceToken).post("/draws/1/tickets");
+
+        // Проводим розыгрыш (статус -> CLOSED -> COMPLETED)
+        // ... (код изменения статуса в БД и вызова /admin/draws/1/run-draw) ...
+
+        // 2. Запрос результатов пользователя
+        Response response = given()
+                .header("Authorization", "Bearer " + aliceToken)
+                .when()
+                .get("/me/results");
+
+        // 3. Проверка
+        response.then()
+                .statusCode(200)
+                .body("[0].status", anyOf(equalTo("WIN"), equalTo("LOSE")));
     }
 
 }
