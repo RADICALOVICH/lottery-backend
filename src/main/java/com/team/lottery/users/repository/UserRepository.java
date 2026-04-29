@@ -1,6 +1,5 @@
 package com.team.lottery.users.repository;
 
-
 import com.team.lottery.users.model.UserAuthData;
 import com.team.lottery.users.model.UserResponse;
 
@@ -12,6 +11,7 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class UserRepository {
@@ -22,7 +22,7 @@ public class UserRepository {
         this.ds = ds;
     }
 
-    public boolean existsByLogin(String login) throws SQLException {
+    public boolean existsByLogin(String login) {
         String sql = "SELECT 1 FROM users WHERE login = ? LIMIT 1";
 
         try (Connection connection = ds.getConnection();
@@ -33,10 +33,12 @@ public class UserRepository {
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next();
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while checking login existence", e);
         }
     }
 
-    public long createUser(String login, String passwordHash) throws SQLException {
+    public long createUser(String login, String passwordHash) {
         String sql = """
                 INSERT INTO users (login, password_hash, role)
                 VALUES (?, ?, 'USER')
@@ -55,10 +57,12 @@ public class UserRepository {
                 }
                 throw new SQLException("Failed to insert user");
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while creating user", e);
         }
     }
 
-    public UserAuthData findByLogin(String login) throws SQLException {
+    public Optional<UserAuthData> findByLogin(String login) {
         String sql = """
                 SELECT id, login, password_hash, role
                 FROM users
@@ -73,25 +77,27 @@ public class UserRepository {
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    return new UserAuthData(
+                    return Optional.of(new UserAuthData(
                             resultSet.getLong("id"),
                             resultSet.getString("login"),
                             resultSet.getString("password_hash"),
                             resultSet.getString("role")
-                    );
+                    ));
                 }
-                return null;
+                return Optional.empty();
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while finding user by login", e);
         }
     }
 
-    public UserResponse findById(long id) throws SQLException {
+    public Optional<UserResponse> findById(long id) {
         String sql = """
-            SELECT id, login, role
-            FROM users
-            WHERE id = ?
-            LIMIT 1
-            """;
+                SELECT id, login, role
+                FROM users
+                WHERE id = ?
+                LIMIT 1
+                """;
 
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -100,22 +106,25 @@ public class UserRepository {
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    return new UserResponse(
+                    return Optional.of(new UserResponse(
                             resultSet.getLong("id"),
                             resultSet.getString("login"),
                             resultSet.getString("role")
-                    );
+                    ));
                 }
-                return null;
+                return Optional.empty();
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while finding user by id", e);
         }
     }
-    public List<UserResponse> findAllUsers() throws SQLException {
+
+    public List<UserResponse> findAllUsers() {
         String sql = """
-            SELECT id, login, role
-            FROM users
-            ORDER BY id
-            """;
+                SELECT id, login, role
+                FROM users
+                ORDER BY id
+                """;
 
         List<UserResponse> users = new ArrayList<>();
 
@@ -130,12 +139,14 @@ public class UserRepository {
                         resultSet.getString("role")
                 ));
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while finding all users", e);
         }
 
         return users;
     }
 
-    public List<UserResponse> findUsersByIds(List<Long> ids) throws SQLException {
+    public List<UserResponse> findUsersByIds(List<Long> ids) {
         List<UserResponse> users = new ArrayList<>();
 
         if (ids == null || ids.isEmpty()) {
@@ -147,11 +158,11 @@ public class UserRepository {
                 .collect(Collectors.joining(", "));
 
         String sql = """
-            SELECT id, login, role
-            FROM users
-            WHERE id IN (%s)
-            ORDER BY id
-            """.formatted(placeholders);
+                SELECT id, login, role
+                FROM users
+                WHERE id IN (%s)
+                ORDER BY id
+                """.formatted(placeholders);
 
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -169,6 +180,8 @@ public class UserRepository {
                     ));
                 }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error while finding users by ids", e);
         }
 
         return users;
