@@ -7,8 +7,8 @@ import com.team.lottery.users.dto.LoginRequest;
 import com.team.lottery.users.dto.RegisterRequest;
 import com.team.lottery.users.model.UserAuthData;
 import com.team.lottery.users.repository.UserRepository;
+import com.team.lottery.users.service.AuthService;
 import com.team.lottery.users.service.TokenService;
-import com.team.lottery.users.util.AuthUtil;
 import com.team.lottery.users.util.AuthValidationUtil;
 import com.team.lottery.users.util.PasswordUtil;
 import io.javalin.config.RoutesConfig;
@@ -19,10 +19,12 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final TokenService tokenService;
+    private final AuthService auth;
 
-    public AuthController(UserRepository userRepository, TokenService tokenService) {
+    public AuthController(UserRepository userRepository, TokenService tokenService, AuthService auth) {
         this.userRepository = userRepository;
         this.tokenService = tokenService;
+        this.auth = auth;
     }
 
     public void registerRoutes(RoutesConfig routes) {
@@ -107,14 +109,8 @@ public class AuthController {
         });
 
         routes.post("/auth/logout", ctx -> {
-            String token = AuthUtil.extractToken(ctx);
-            AuthUtil.requireUserByToken(token, tokenService, userRepository);
-
-            tokenService.removeToken(token);
-
-            ctx.status(200).json(Map.of(
-                    "message", "Logout successful"
-            ));
+            auth.logout(ctx);
+            ctx.status(200).json(Map.of("message", "Logout successful"));
         });
     }
 }

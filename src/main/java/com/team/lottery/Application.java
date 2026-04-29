@@ -53,7 +53,7 @@ public final class Application {
         TokenService tokenService = new TokenService();
         AuthService authService = new AuthService(tokenService, userRepository);
 
-        AuthController authController = new AuthController(userRepository, tokenService);
+        AuthController authController = new AuthController(userRepository, tokenService, authService);
         UserController userController = new UserController(userRepository, tokenService, authService);
 
         //Draw repository initialization

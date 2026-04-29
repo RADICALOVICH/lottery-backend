@@ -36,6 +36,12 @@ public class AuthService {
         return user;
     }
 
+    public void logout(Context ctx) {
+        requireUser(ctx);                              // валидирует токен и юзера
+        String token = extractBearerToken(ctx);
+        tokenService.removeToken(token);
+    }
+
     private static String extractBearerToken(Context ctx) {
         String header = ctx.header("Authorization");
         if (header == null || header.isBlank()) {
