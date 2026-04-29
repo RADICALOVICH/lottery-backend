@@ -15,6 +15,7 @@ import com.team.lottery.ticket.service.TicketService;
 import com.team.lottery.users.controller.AuthController;
 import com.team.lottery.users.controller.UserController;
 import com.team.lottery.users.repository.UserRepository;
+import com.team.lottery.users.service.AuthService;
 import com.team.lottery.users.service.TokenService;
 import com.zaxxer.hikari.HikariDataSource;
 import io.javalin.Javalin;
@@ -50,9 +51,10 @@ public final class Application {
         // User repository initialization
         UserRepository userRepository = new UserRepository(ds);
         TokenService tokenService = new TokenService();
+        AuthService authService = new AuthService(tokenService, userRepository);
 
         AuthController authController = new AuthController(userRepository, tokenService);
-        UserController userController = new UserController(userRepository, tokenService);
+        UserController userController = new UserController(userRepository, tokenService, authService);
 
         //Draw repository initialization
         DrawRepository drawRepository = new JdbcDrawRepository(ds);
@@ -61,11 +63,11 @@ public final class Application {
         // Ticket repository initialization
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository, drawRepository);
-        TicketController ticketController = new TicketController(ticketService, userRepository, tokenService);
+        TicketController ticketController = new TicketController(ticketService, authService);
 
         DrawService drawService = new DrawService(ds, drawRepository, drawResultRepository, ticketRepository);
         DrawController drawController = new DrawController(drawService);
-        AdminDrawController adminDrawController = new AdminDrawController(drawService, userRepository, tokenService);
+        AdminDrawController adminDrawController = new AdminDrawController(drawService, authService);
 
 /*
         // Ticket repository initialization
