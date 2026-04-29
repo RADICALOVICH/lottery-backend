@@ -6,8 +6,6 @@ import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.repository.UserRepository;
 import io.javalin.http.Context;
 
-import java.sql.SQLException;
-
 public class AuthService {
 
     private final TokenService tokenService;
@@ -26,19 +24,8 @@ public class AuthService {
             throw new UnauthorizedException("Invalid or expired token");
         }
 
-        UserResponse user;
-        try {
-            user = userRepository.findById(userId);
-        } catch (SQLException e) {
-            // временно: UserRepository пока бросает checked SQLException.
-            // на следующем шаге переведём его на unchecked + Optional, и этот try/catch уйдёт.
-            throw new RuntimeException("Failed to load user", e);
-        }
-
-        if (user == null) {
-            throw new UnauthorizedException("User not found");
-        }
-        return user;
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
 
     public UserResponse requireAdmin(Context ctx) {

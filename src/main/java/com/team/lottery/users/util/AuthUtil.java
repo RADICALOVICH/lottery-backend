@@ -2,12 +2,10 @@ package com.team.lottery.users.util;
 
 import com.team.lottery.common.errors.ForbiddenException;
 import com.team.lottery.common.errors.UnauthorizedException;
-import io.javalin.http.Context;
 import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.TokenService;
-
-import java.sql.SQLException;
+import io.javalin.http.Context;
 
 public final class AuthUtil {
 
@@ -38,7 +36,7 @@ public final class AuthUtil {
             Context ctx,
             TokenService tokenService,
             UserRepository userRepository
-    ) throws SQLException {
+    ) {
         String token = extractToken(ctx);
         return requireUserByToken(token, tokenService, userRepository);
     }
@@ -48,23 +46,19 @@ public final class AuthUtil {
             throw new ForbiddenException("Access denied");
         }
     }
+
     public static UserResponse requireUserByToken(
             String token,
             TokenService tokenService,
             UserRepository userRepository
-    ) throws SQLException {
+    ) {
         Long userId = tokenService.getUserIdByToken(token);
 
         if (userId == null) {
             throw new UnauthorizedException("Invalid or expired token");
         }
 
-        UserResponse user = userRepository.findById(userId);
-
-        if (user == null) {
-            throw new UnauthorizedException("User not found");
-        }
-
-        return user;
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
 }
