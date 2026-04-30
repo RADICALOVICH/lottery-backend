@@ -1,4 +1,5 @@
 package com.team.lottery.smoke;
+
 import com.team.lottery.Application;
 import com.team.lottery.config.DatabaseConfig;
 import io.javalin.Javalin;
@@ -10,19 +11,28 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
 import static org.hamcrest.Matchers.notNullValue;
+
 import io.restassured.parsing.Parser;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+import java.util.List;
+import java.util.Map;
+
 import static org.hamcrest.Matchers.anyOf;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
+
 @Testcontainers
-public class IntegrationTest {
+public class LotteryApiTests {
 
     private static Javalin app;
     private static final int TEST_PORT = 8082; // Используем отдельный порт для тестов
-
 
 
     @BeforeAll
@@ -982,7 +992,9 @@ public class IntegrationTest {
         given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
@@ -1027,7 +1039,9 @@ public class IntegrationTest {
         given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
@@ -1052,10 +1066,10 @@ public class IntegrationTest {
     @Test
     public void runDrawAsAdmin() {
         /*
-        * Сценарий: Запуск розыгрыша тиража
-        * Вход: POST /admin/draws/1/run-draw с JWT админа
-        * Ожидаемый результат: 200 OK, DrawResponse status=COMPLETED
-        * */
+         * Сценарий: Запуск розыгрыша тиража
+         * Вход: POST /admin/draws/1/run-draw с JWT админа
+         * Ожидаемый результат: 200 OK, DrawResponse status=COMPLETED
+         * */
         // Регистрация парсера для обработки text/plain как текста
         RestAssured.registerParser("text/plain", Parser.TEXT);
 
@@ -1063,7 +1077,9 @@ public class IntegrationTest {
         given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
@@ -1078,7 +1094,9 @@ public class IntegrationTest {
         // 3. Ставим статус CLOSED
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE draws SET status = 'CLOSED' WHERE id = 1");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         // 4. Выполнение
         Response response = given()
@@ -1112,7 +1130,9 @@ public class IntegrationTest {
         given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
@@ -1127,7 +1147,9 @@ public class IntegrationTest {
         // Принудительное закрытие и проведение розыгрыша
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE draws SET status = 'CLOSED' WHERE id = 1");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         given().header("Authorization", "Bearer " + adminToken).post("/admin/draws/1/run-draw");
 
@@ -1139,7 +1161,9 @@ public class IntegrationTest {
             } else {
                 System.out.println("DEBUG: No draw_result record found in database!");
             }
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         // 3. GET запрос на получение результата
         Response response = given()
@@ -1179,7 +1203,9 @@ public class IntegrationTest {
         given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
@@ -1192,7 +1218,9 @@ public class IntegrationTest {
         // 2. Проведение розыгрыша (перевод статусов билетов из SOLD в WIN/LOSE)
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("UPDATE draws SET status = 'CLOSED' WHERE id = 1");
-        } catch (Exception e) { throw new RuntimeException(e); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         given().header("Authorization", "Bearer " + adminToken).post("/admin/draws/1/run-draw");
 
@@ -1208,4 +1236,275 @@ public class IntegrationTest {
                 .body("[0].status", anyOf(equalTo("WIN"), equalTo("LOSE")));
     }
 
+    @Test
+    public void testGetLoggedInUsersAsAdmin() {
+
+        /* Активные пользователи (запрос от администратора)
+          Сценарий: Список залогиненных пользователей
+          Вход: GET /admin/logged-in-users с JWT админа (после логина alice и admin)
+          Ожидаемый результат: Массив с активными сессиями
+        */
+
+
+        // 1. Регистрация обычного пользователя
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(201), is(409)));
+
+        // 2. Регистрация будущего админа
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "admin", "password", "admin-pass"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(201), is(409)));
+
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // 4. Логин Alice (создаем сессию)
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200);
+
+        // 5. Логин Admin (получаем токен с правами ADMIN)
+        String adminToken = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "admin", "password", "admin-pass"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .extract().path("token");
+
+        // 6. Финальная проверка списка активных сессий
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .when()
+                .get("/admin/logged-in-users")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body("login", hasItems("alice", "admin"));
+    }
+
+
+    @Test
+    public void testGetLoggedInUsersAsUser() {
+
+        /* Активные пользователи (запрос от пользователя)
+          Сценарий: Список залогиненных пользователей
+          Вход: GET /admin/logged-in-users с JWT пользователя (после логина alice и admin)
+          Ожидаемый результат: Массив с активными сессиями
+        */
+
+
+        // 1. Регистрация обычного пользователя
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(201), is(409)));
+
+        // 2. Регистрация будущего админа
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "admin", "password", "admin-pass"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(201), is(409)));
+
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // 4. Логин Alice (создаем сессию)
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200);
+
+        // 5. Логин Admin (получаем токен с правами ADMIN)
+        String userToken = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .extract().path("token");
+
+        // 6. Финальная проверка списка активных сессий
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .get("/admin/logged-in-users")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(403).
+                contentType(ContentType.JSON)
+                .body("code", equalTo("FORBIDDEN"));
+    }
+
+
+    @Test
+    public void testGetLoggedInUsersWhenNotLoggedIn() {
+
+        /* Активные пользователи (запрос от пользователя)
+          Сценарий: Список залогиненных пользователей
+          Вход: GET /admin/logged-in-users без JWT пользователя (после логина alice и admin)
+          Ожидаемый результат: 401
+        */
+
+
+        // 1. Регистрация обычного пользователя
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(201), is(409)));
+
+        // 2. Регистрация будущего админа
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "admin", "password", "admin-pass"))
+                .when()
+                .post("/auth/register")
+                .then()
+                .statusCode(anyOf(is(201), is(409)));
+
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // 4. Логин Alice (создаем сессию)
+        given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200);
+
+        // 5. Логин Admin (получаем токен с правами ADMIN)
+        String userToken = given()
+                .contentType(ContentType.JSON)
+                .body(Map.of("login", "alice", "password", "password123"))
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .extract().path("token");
+
+        // 6. Финальная проверка списка активных сессий
+        given()
+                .when()
+                .get("/admin/logged-in-users")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(401).
+                contentType(ContentType.JSON)
+                .body("code", equalTo("UNAUTHORIZED"));
+    }
+
+
+
+
+    @Test
+    public void createASecondDrawAsAdmin() {
+        /*
+            Создание второго тиража
+            Сценарий: Множественные тиражи
+            Вход: POST /admin/draws с { "title": "Тираж #2"... }
+            Ожидаемый результат: Тираж ID#2
+         */
+
+        // 1. Создание админа (используем вспомогательный подход)
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"admin\", \"password\": \"admin123\" }")
+                .post("/auth/register");
+
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set admin role", e);
+        }
+
+        // 2. Логин
+        String token = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"admin\", \"password\": \"admin123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+        // 3. Создание тиража
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "title": "Тираж #1",
+                          "totalTickets": 1000,
+                          "endDate": "2026-04-25T18:00:00Z"
+                        }
+                        """)
+                .when()
+                .post("/admin/draws")
+                .then()
+                .statusCode(201)
+                .contentType(ContentType.JSON)
+                .body("id", equalTo(1))
+                .body("title", equalTo("Тираж #1"))
+                .body("totalTickets", equalTo(1000))
+                .body("status", equalTo("ACTIVE"));
+
+        // 4. Создание второго тиража
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "title": "Тираж #2",
+                          "totalTickets": 2000,
+                          "endDate": "2027-05-25T18:00:00Z"
+                        }
+                        """)
+                .when()
+                .post("/admin/draws")
+                .then()
+                .statusCode(201)
+                .contentType(ContentType.JSON)
+                .body("id", equalTo(2))
+                .body("title", equalTo("Тираж #2"))
+                .body("totalTickets", equalTo(2000))
+                .body("status", equalTo("ACTIVE"));
+    }
 }
+
+
+

@@ -56,6 +56,7 @@ public class UserController {
 
         ctx.status(200).json(users);
     }
+
     public void registerRoutes(RoutesConfig routes) {
         routes.get("/users/me", this::me);
         routes.get("/users", this::findAll);

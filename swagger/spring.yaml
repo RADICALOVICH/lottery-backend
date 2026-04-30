@@ -276,8 +276,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/UserListResponse"
+        "403":
+          description: Не ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
         "401":
-          description: Не авторизован или не ADMIN
+          description: Не авторизован
           content:
             application/json:
               schema:
@@ -548,40 +554,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponseBody"
 
-# Readme.md
-# Цитата: GET /tickets?drawId=1&status=AVAILABLE (админский список билетов)
-  /tickets:
-    get:
-      tags:
-        - Tickets
-      summary: Получить список билетов
-      description: "Список всех билетов с фильтрацией по drawId и status."
-      parameters:
-        - name: drawId
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - AVAILABLE
-              - SOLD
-              - WIN
-              - LOSE
-      responses:
-        "200":
-          description: Список билетов
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TicketDto"
 
 # Readme.md
 # Цитата: TicketController.java ← HTTP-ручки /tickets/*
