@@ -586,6 +586,7 @@ build/reports/tests/test/index.html
 
 **Где искать отчет:**
 build/reports/jacoco/test/html/index.html
+
 **Что там есть:** Цветная разметка кода (зеленое — протестировано, красное — нет) и статистика по пакетам/классам.
 
 
