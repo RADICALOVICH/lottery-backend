@@ -108,7 +108,7 @@ public class DrawService {
         return savedDraw;
     }
 
-    public void runDraw(Long drawId) {
+    public Draw runDraw(Long drawId) {
         Draw draw = drawRepository.findById(drawId)
                 .orElseThrow(() -> new NotFoundException("Draw not found with id: " + drawId));
 
@@ -180,6 +180,11 @@ public class DrawService {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to run draw in transaction", e);
         }
+
+        // Неэффективно (второй запрос в БД). Но надежно.
+        // Пренебрегаем эффективностью: розыгрыш проводится нечасто.
+        return drawRepository.findById(drawId)
+                .orElseThrow(() -> new NotFoundException("Draw not found"));
     }
 
     public List<Draw> getAllDraws() {

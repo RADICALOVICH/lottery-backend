@@ -261,7 +261,6 @@ docker compose --profile full up --build
 
 ```bash
 ./gradlew build      # компиляция + тесты + shadowJar
-./gradlew test       # только тесты
 ./gradlew run        # запуск приложения
 ./gradlew shadowJar  # fat-jar в build/libs/lottery-backend.jar
 ```
@@ -559,9 +558,36 @@ Flyway накатывает всё из `src/main/resources/db/migration/` пр�
 
 ## Тесты
 
+### Стандартный отчет Gradle (Результаты тестов)
+
 ```bash
 ./gradlew test
 ```
+
+```bash
+./gradlew test --rerun
+```
+
+**Где искать отчет:**
+build/reports/tests/test/index.html
+
+**Что там есть: **
+Список всех пройденных/упавших тестов, время выполнения и логи ошибок.
+
+
+### Отчет JaCoCo (Покрытие кода)
+
+Этот инструмент показывает, какой процент вашего кода (строки, ветвления) был реально затронут тестами. У вас он уже настроен в блоке tasks.jacocoTestReport.
+Как запустить:
+```bash
+./gradlew test jacocoTestReport
+```
+`
+
+**Где искать отчет:**
+build/reports/jacoco/test/html/index.html
+**Что там есть: **Цветная разметка кода (зеленое — протестировано, красное — нет) и статистика по пакетам/классам.
+
 
 - **Unit-тесты** (`*Test`) — логика сервисов с моками репозиториев, валидации.
 - **Integration-тесты** (`*IT`) — поднимают Postgres через Testcontainers и бьют по настоящей БД. Docker должен быть запущен.
@@ -633,7 +659,7 @@ cd swagger
 
 ```
 sudo docker run --rm -p 8081:8080 \
-  -e SWAGGER_JSON=/spec/spring.yaml \
+  -e SWAGGER_JSON=/spec/swagger.yaml \
   -v "$PWD":/spec \
   --name swaggerui swaggerapi/swagger-ui
 ```

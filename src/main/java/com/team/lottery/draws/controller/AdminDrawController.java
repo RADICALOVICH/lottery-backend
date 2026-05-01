@@ -45,7 +45,11 @@ public class AdminDrawController {
             requireAdminId(ctx);
 
             Long drawId = Long.valueOf(ctx.pathParam("id"));
-            drawService.runDraw(drawId);
+            Draw updatedDraw = drawService.runDraw(drawId);
+
+            DrawResponse response = DrawMapper.toResponse(updatedDraw);
+
+            ctx.json(response);
         });
     }
 
