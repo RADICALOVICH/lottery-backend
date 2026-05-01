@@ -252,13 +252,20 @@ paths:
                 login: admin
                 role: ADMIN
         "401":
-          description: Не авторизован или не ADMIN
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "403":
+          description: Не ADMIN
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponseBody"
 
-# UserController.java ← HTTP-ручка GET /admin/logged-in-users (требует ADMIN JWT)
+
+  # UserController.java ← HTTP-ручка GET /admin/logged-in-users (требует ADMIN JWT)
   /admin/logged-in-users:
     get:
       tags:

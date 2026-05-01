@@ -1,11 +1,11 @@
-package com.team.lottery.smoke;
+package com.team.lottery.smoke.health;
 
 import com.team.lottery.Application;
 import com.team.lottery.config.DatabaseConfig;
-import com.team.lottery.draws.dto.CreateDrawRequest;
 import io.javalin.Javalin;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.parsing.Parser;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -13,27 +13,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static org.hamcrest.Matchers.notNullValue;
-
-import io.restassured.parsing.Parser;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-
-import static org.hamcrest.Matchers.anyOf;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-
 
 @Testcontainers
-public class LotteryApiTests {
+public class GetHealthTest {
 
     private static Javalin app;
     private static final int TEST_PORT = 8082; // Используем отдельный порт для тестов
