@@ -68,6 +68,9 @@ application {
 
 tasks.test {
     useJUnitPlatform()
+
+    maxParallelForks = 1
+
     testLogging {
         events("passed", "failed", "skipped")
         showStandardStreams = false

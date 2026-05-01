@@ -372,6 +372,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponseBody"
+        "409":
+          description: Попытка провести тираж без проданных билетов.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
 
   /draws:
 # Readme.md
@@ -497,6 +503,12 @@ paths:
                 $ref: "#/components/schemas/ErrorResponseBody"
         "404":
           description: Тираж не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "409":
+          description: Попытка купить билет, если билетов нет.
           content:
             application/json:
               schema:

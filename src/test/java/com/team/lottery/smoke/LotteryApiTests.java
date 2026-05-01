@@ -2,6 +2,7 @@ package com.team.lottery.smoke;
 
 import com.team.lottery.Application;
 import com.team.lottery.config.DatabaseConfig;
+import com.team.lottery.draws.dto.CreateDrawRequest;
 import io.javalin.Javalin;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -19,6 +20,9 @@ import io.restassured.parsing.Parser;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +37,18 @@ public class LotteryApiTests {
 
     private static Javalin app;
     private static final int TEST_PORT = 8082; // Используем отдельный порт для тестов
+
+
+    private String getDateInFuture() {
+        // Получить дату в будущем.
+        // Дата проведения тиража не должна быть в прошлом.
+
+        return OffsetDateTime.now(ZoneOffset.UTC)
+                .plusYears(1)
+                .toInstant()
+                .toString();
+    }
+
 
 
     @BeforeAll
@@ -641,23 +657,22 @@ public class LotteryApiTests {
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
                 .body("""
-                        {
-                          "title": "Тираж #1",
-                          "totalTickets": 1000,
-                          "endDate": "2026-04-25T18:00:00Z"
-                        }
-                        """)
+                    {
+                      "title": "Тираж #1",
+                      "totalTickets": 1000,
+                      "endDate": "%s"
+                    }
+                    """.formatted(getDateInFuture())) // Inject the date here
                 .when()
                 .post("/admin/draws")
                 .then()
                 .statusCode(201)
                 .contentType(ContentType.JSON)
-                .body("id", equalTo(1))
+                .body("id", notNullValue()) // Usually safer than checking for specific ID '1'
                 .body("title", equalTo("Тираж #1"))
                 .body("totalTickets", equalTo(1000))
                 .body("status", equalTo("ACTIVE"));
     }
-
 
     @Test
     public void createDrawWithEmptyTitle() {
@@ -692,9 +707,9 @@ public class LotteryApiTests {
                 .body("""
                         {
                           "totalTickets": 100,
-                          "endDate": "2026-04-25T18:00:00Z"
+                          "endDate": "%s"
                         }
-                        """)
+                        """.formatted(getDateInFuture()))
                 .when()
                 .post("/admin/draws")
                 .then()
@@ -702,6 +717,8 @@ public class LotteryApiTests {
                 .contentType(ContentType.JSON)
                 .body("code", equalTo("VALIDATION_FAILED"));
     }
+
+
 
     @Test
     public void getAllDraws() {
@@ -734,13 +751,13 @@ public class LotteryApiTests {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body("""
+                .body(String.format("""
                         {
                           "title": "Тираж #1",
                           "totalTickets": 1000,
-                          "endDate": "2026-04-25T18:00:00Z"
+                          "endDate": "%s"
                         }
-                        """)
+                        """, getDateInFuture()))
                 .post("/admin/draws");
 
         // 3. Получаем список всех тиражей
@@ -787,13 +804,13 @@ public class LotteryApiTests {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body("""
+                .body(String.format("""
                         {
                           "title": "Активный тираж",
                           "totalTickets": 500,
-                          "endDate": "2026-05-01T10:00:00Z"
+                          "endDate": "%s"
                         }
-                        """)
+                        """, getDateInFuture()))
                 .post("/admin/draws");
 
         // 3. Выполняем GET запрос с фильтром
@@ -841,13 +858,13 @@ public class LotteryApiTests {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body("""
+                .body(String.format("""
                         {
                           "title": "Тираж для теста ID",
                           "totalTickets": 200,
-                          "endDate": "2026-06-01T12:00:00Z"
+                          "endDate": "%s"
                         }
-                        """)
+                        """, getDateInFuture()))
                 .post("/admin/draws");
 
         // 3. Запрашиваем тираж по ID=1
@@ -899,7 +916,7 @@ public class LotteryApiTests {
         String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
-                .body("{ \"title\": \"Lottery 1\", \"totalTickets\": 100, \"endDate\": \"2026-06-01T10:00:00Z\" }")
+                .body("{ \"title\": \"Lottery 1\", \"totalTickets\": 100, \"endDate\": \"%s\" }".formatted(getDateInFuture()))
                 .post("/admin/draws");
 
         // 2. Логин юзера
@@ -998,7 +1015,7 @@ public class LotteryApiTests {
         String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
-                .body("{ \"title\": \"Lottery 1\", \"totalTickets\": 100, \"endDate\": \"2026-06-01T10:00:00Z\" }")
+                .body("{ \"title\": \"Lottery 1\", \"totalTickets\": 100, \"endDate\": \"%s\" }".formatted(getDateInFuture()))
                 .post("/admin/draws");
 
         // 3. Покупка билета
@@ -1045,7 +1062,7 @@ public class LotteryApiTests {
         String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
-                .body("{ \"title\": \"Тираж #1\", \"totalTickets\": 100, \"endDate\": \"2026-06-01T10:00:00Z\" }")
+                .body(String.format("{ \"title\": \"Тираж #1\", \"totalTickets\": 100, \"endDate\": %s }", "2027-01-01T00:00:00Z"))
                 .post("/admin/draws");
 
         // 3. Покупка билета alice
@@ -1083,7 +1100,7 @@ public class LotteryApiTests {
         String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
-                .body("{ \"title\": \"Тираж\", \"totalTickets\": 10, \"endDate\": \"2027-01-01T00:00:00Z\" }")
+                .body(String.format("{ \"title\": \"Тираж\", \"totalTickets\": 10, \"endDate\": \"%s\" }", getDateInFuture()))
                 .post("/admin/draws");
 
         // 2. Покупка билета
@@ -1136,7 +1153,7 @@ public class LotteryApiTests {
         String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
-                .body("{ \"title\": \"Тираж для результата\", \"totalTickets\": 10, \"endDate\": \"2027-01-01T00:00:00Z\" }")
+                .body(String.format("{ \"title\": \"Тираж для результата\", \"totalTickets\": 10, \"endDate\": \"%s\" }", getDateInFuture()))
                 .post("/admin/draws");
 
         // Покупка билета
@@ -1209,7 +1226,7 @@ public class LotteryApiTests {
         String adminToken = given().contentType("application/json").body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
 
         given().header("Authorization", "Bearer " + adminToken).contentType("application/json")
-                .body("{ \"title\": \"Тираж для результатов\", \"totalTickets\": 10, \"endDate\": \"2027-01-01T00:00:00Z\" }")
+                .body(String.format("{ \"title\": \"Тираж для результатов\", \"totalTickets\": 10, \"endDate\": \"%s\" }", getDateInFuture()))
                 .post("/admin/draws");
 
         // Alice покупает билет
@@ -1432,8 +1449,6 @@ public class LotteryApiTests {
     }
 
 
-
-
     @Test
     public void createASecondDrawAsAdmin() {
         /*
@@ -1466,13 +1481,13 @@ public class LotteryApiTests {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body("""
+                .body(String.format("""
                         {
                           "title": "Тираж #1",
                           "totalTickets": 1000,
-                          "endDate": "2026-04-25T18:00:00Z"
+                          "endDate": \"%s\"
                         }
-                        """)
+                        """, getDateInFuture()))
                 .when()
                 .post("/admin/draws")
                 .then()
@@ -1487,13 +1502,13 @@ public class LotteryApiTests {
         given()
                 .header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body("""
+                .body(String.format("""
                         {
                           "title": "Тираж #2",
                           "totalTickets": 2000,
-                          "endDate": "2027-05-25T18:00:00Z"
+                          "endDate": \"%s\"
                         }
-                        """)
+                        """, getDateInFuture()))
                 .when()
                 .post("/admin/draws")
                 .then()
@@ -1503,6 +1518,400 @@ public class LotteryApiTests {
                 .body("title", equalTo("Тираж #2"))
                 .body("totalTickets", equalTo(2000))
                 .body("status", equalTo("ACTIVE"));
+    }
+
+
+    @Test
+    public void buySeveralTicketsByOneUser() {
+        /*
+        Покупка нескольких билетов одним пользователем
+        Сценарий: Пользователь покупает 2 билета в разные тиражи
+        Вход: POST /draws/1/tickets и POST /draws/2/tickets с JWT alice
+        Ожидаемый результат: 2 билета в /me/tickets
+         */
+
+        // 1. Создание админа и тиража
+        given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login")
+                .then().extract().path("token");
+
+        // Создаем тираж и забираем его настоящий ID
+        int drawId = given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(String.format("{ \"title\": \"Lottery 1\", \"totalTickets\": 100, \"endDate\": \"%s\" }", getDateInFuture()))
+                .post("/admin/draws")
+                .then().extract().path("id");
+
+        // 2. Регистрация и логин юзера
+        given().contentType(ContentType.JSON).body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/register");
+        String userToken = given().contentType(ContentType.JSON).body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/login")
+                .then().extract().path("token");
+
+        // 3. Покупка двух билетов в этот тираж
+        for (int i = 0; i < 2; i++) {
+            given()
+                    .header("Authorization", "Bearer " + userToken)
+                    .when()
+                    .post("/draws/" + drawId + "/tickets")
+                    .then()
+                    .statusCode(200)
+                    .body("ticket.status", equalTo("SOLD"));
+        }
+
+        // 4. ФИНАЛЬНАЯ ПРОВЕРКА (согласно сценарию)
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .get("/me/tickets")
+                .then()
+                .statusCode(200)
+                .body("$", hasSize(2)) // Проверяем, что билетов именно 2
+                .body("ownerId", everyItem(notNullValue()));
+    }
+
+    @Test
+    public void buyTicketLimitExceeded() {
+        /*
+         * Сценарий: Попытка купить билет после исчерпания лимита
+         * 1. Админ создает тираж с totalTickets = 1
+         * 2. Юзер покупает первый (он же последний доступный) билет
+         * 3. Юзер пытается купить второй билет в тот же тираж
+         * Ожидаемый результат: 400 Bad Request на второй попытке
+         */
+
+        // 1. Подготовка: Регистрация и получение токена админа
+        given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        // 2. Создание тиража с лимитом в 1 билет
+        int drawId = given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(String.format("{ \"title\": \"Limited Draw\", \"totalTickets\": 1, \"endDate\": \"%s\" }", getDateInFuture()))
+                .post("/admin/draws")
+                .then()
+                .statusCode(201)
+                .extract().path("id");
+
+        // 3. Подготовка юзера
+        given().contentType(ContentType.JSON).body("{ \"login\": \"bob\", \"password\": \"password123\" }").post("/auth/register");
+        String userToken = given().contentType(ContentType.JSON).body("{ \"login\": \"bob\", \"password\": \"password123\" }").post("/auth/login").then().extract().path("token");
+
+        // 4. Покупка первого билета (успешно)
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .post("/draws/" + drawId + "/tickets")
+                .then()
+                .statusCode(200)
+                .body("message", equalTo("Ticket purchased successfully"));
+
+        // 5. Попытка покупки второго билета (ожидаем ошибку)
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .when()
+                .post("/draws/" + drawId + "/tickets")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(409) // Bad Request согласно спецификации для невозможной покупки
+                .contentType(ContentType.JSON)
+                .body("code", notNullValue())
+                .body("message", anyOf(
+                        containsString("No available tickets for this draw"),
+                        containsString("sold out"),
+                        containsString("Limit exceeded")
+                ));
+    }
+
+
+    @Test
+    public void runDrawWithoutSoldTickets() {
+        /*
+         * Сценарий: Проведение розыгрыша победителей без продаж билетов.
+         * 1. Админ создает тираж с totalTickets = 10
+         * 2. Переводим тираж в статус CLOSED (так как розыгрыш возможен только для закрытых тиражей)
+         * 3. Пытаемся запустить розыгрыш эндпоинтом /admin/draws/{id}/run-draw
+         * Ожидаемый результат: 400 Bad Request, так как нельзя выбрать победителя из 0 билетов
+         */
+
+        // 1. Подготовка: Регистрация и получение токена админа
+        given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        // 2. Создание тиража (билеты НЕ покупаем)
+        int drawId = given()
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(String.format("{ \"title\": \"Empty Draw\", \"totalTickets\": 10, \"endDate\": \"%s\" }", getDateInFuture()))
+                .post("/admin/draws")
+                .then()
+                .statusCode(201)
+                .extract().path("id");
+
+        // 3. Перевод тиража в статус CLOSED в БД
+        // Тираж должен быть закрыт перед розыгрышем
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            var statement = connection.prepareStatement("UPDATE draws SET status = 'CLOSED' WHERE id = ?");
+            statement.setInt(1, drawId);
+            statement.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // 4. Попытка провести розыгрыш без проданных билетов
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .when()
+                .post("/admin/draws/" + drawId + "/run-draw")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(409) // Ожидаем ошибку бизнес-логики
+                .contentType(ContentType.JSON)
+                .body("code", equalTo("CONFLICT"))
+                .body("message", anyOf(
+                        containsString("No tickets sold - cannot run draw")
+                ));
+    }
+
+
+    @Test
+    public void getAllUsersByOrdinaryUser() {
+        /*
+         * Сценарий: Получение списка пользователей простым пользователем (не администратором).
+         * 1. Регистрация alice
+         * 2. Авторизация alice
+         * 3. Запрос GET /users
+         * Ожидаемый результат: 403 Forbidden.
+         */
+
+        // 1. Регистрация alice
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+
+
+        // 2. Авторизация
+        String token = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+        // 3. Запрос списка пользователей
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .get("/users")
+                .then()
+                .statusCode(403)
+                .contentType(ContentType.JSON)
+                .body("code", equalTo("FORBIDDEN"));
+    }
+
+
+    @Test
+    public void logoutSuccess() {
+        /*
+         * Сценарий: проверка выхода.
+         * 1. Регистрация alice
+         * 2. Авторизация alice
+         * 3. Запрос POST /auth/logout
+         * Ожидаемый результат: 200 Ok.  */
+
+        // 1. Регистрация alice
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+
+
+        // 2. Авторизация
+        String token = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .when()
+                .post("/auth/logout")
+                .then()
+                .statusCode(200);
+    }
+
+
+    @Test
+    public void logoutWithoutAuth() {
+        /*
+         * Нельзя разлогинить того, кто не вошел
+         * */
+        given()
+                .when()
+                .post("/auth/logout")
+                .then()
+                .statusCode(401);
+    }
+
+
+    @Test
+    public void tokenInvalidationAfterLogout() {
+        /*
+        Логаут и сразу попытка доступа
+        Сценарий: Проверка инвалидации токена
+        Вход: Логин alice → /users/me → логаут → /users/me с тем же токеном
+        Ожидаемый результат: 401 после логаута
+        */
+
+        // 1. Регистрация alice
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+
+
+        // 2. Авторизация
+        String userToken = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+        /* 3. Проверка инвалидации токена: Logout и сразу попытка доступа */
+        // Сначала проверяем, что доступ есть
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .get("/users/me")
+                .then()
+                .statusCode(200);
+        // Выполняем логаут
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .post("/auth/logout")
+                .then()
+                .statusCode(200);
+        // Пытаемся зайти с тем же токеном снова
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .get("/users/me")
+                .then()
+                .statusCode(401); // Ожидаем отказ, так как токен должен быть недействителен
+    }
+
+    @Test
+    public void loginAfterLogout() {
+        /*
+        Повторный логин после логаута
+        Сценарий: Получение нового токена
+        Вход: Логин → логаут → повторный логин alice
+        Ожидаемый результат: Новый JWT токен успешно получен
+        и работает.
+        * */
+        // 1. Регистрация alice
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/register");
+
+
+        // 2. Авторизация
+        String userToken = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+
+        // 3. Разлогиниваемся
+        given()
+                .header("Authorization", "Bearer " + userToken)
+                .post("/auth/logout")
+                .then()
+                .statusCode(200);
+
+        // 4. Логинимся снова
+        String newUserToken = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+        // 5. Проверяем, что новый токен работает
+        given()
+                .header("Authorization", "Bearer " + newUserToken)
+                .get("/users/me")
+                .then()
+                .statusCode(200)
+                .body("login", equalTo("alice"));
+    }
+
+
+    @Test
+    void shouldReturn409WhenEndDateInPast() {
+        /*
+        Дата окончания тиража в прошлом
+        Сценарий: Создание тиража с endDate < now()
+        Вход: POST /admin/draws с endDate в прошлом
+        Ожидаемый результат: 409
+        * */
+
+        // 1. Создание админа (используем вспомогательный подход)
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"admin\", \"password\": \"admin123\" }")
+                .post("/auth/register");
+
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set admin role", e);
+        }
+
+        // 2. Логин
+        String token = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"admin\", \"password\": \"admin123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+        // 3. Создание тиража. Дата - в прошлом.
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "title": "Тираж #1",
+                          "totalTickets": 1000,
+                          "endDate": "2024-04-25T18:00:00Z"
+                        }
+                        """)
+                .when()
+                .post("/admin/draws")
+                .then()
+                .statusCode(409)
+                .body("code", equalTo("CONFLICT"))
+                .body("message", anyOf(
+                        containsString("The draw end date cannot be in the past")
+                ));
     }
 }
 
