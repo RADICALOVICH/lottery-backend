@@ -60,6 +60,8 @@ dependencies {
 
     // Параметризованные тесты
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.3")
+
+    testImplementation("com.squareup.okhttp3:okhttp:4.12.0")
 }
 
 application {
