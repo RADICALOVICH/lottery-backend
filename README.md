@@ -558,11 +558,29 @@ Flyway накатывает всё из `src/main/resources/db/migration/` пр�
 
 ## Тесты
 
+Для корректной работы тестов необходимо обеспечить права: команда docker ps должна выполняться без sudo.
+Для этого:
+
+
+```bash
+sudo groupadd docker
+```
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Применить эти изменения к текущие изменения к текущей терминальной сессии:
+```bash
+newgrp docker
+```
+
 ### Стандартный отчет Gradle (Результаты тестов)
 
 ```bash
 ./gradlew test
 ```
+Или:
 
 ```bash
 ./gradlew test --rerun
@@ -646,6 +664,7 @@ app.isProd=false
 sudo docker pull docker.swagger.io/swaggerapi/swagger-ui
 ```
 
+
 - **Запустить проект на порту 8080.**
 
 - **В терминале перейти в каталог, где располагается spring.yaml.**
@@ -668,12 +687,4 @@ sudo docker run --rm -p 8081:8080 \
 - **В браузере http://localhost:8081/**
 
 - **Нажимать Try it out / Execute.** 
-
-
-
-
-информация и сервисы
-уведомления
-карту
-изменить номер телефона
 
