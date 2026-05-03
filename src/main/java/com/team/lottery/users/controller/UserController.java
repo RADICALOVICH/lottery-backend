@@ -4,6 +4,7 @@ import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.AuthService;
 import com.team.lottery.users.service.TokenService;
+import io.javalin.http.Context;
 import io.javalin.config.RoutesConfig;
 
 import java.util.Map;

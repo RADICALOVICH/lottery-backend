@@ -1,0 +1,13 @@
+app:
+  port: 0  # Случайный порт для тестов
+
+db:
+  url: jdbc:tc:postgresql:15:///lottery
+  user: lottery
+  password: lottery_dev_password
+  poolSize: 5
+
+logging:
+  level:
+    root: WARN
+    com.team.lottery: DEBUG

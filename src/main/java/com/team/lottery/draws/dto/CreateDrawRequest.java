@@ -1,6 +1,13 @@
 package com.team.lottery.draws.dto;
 
+
+
+
+import com.team.lottery.common.errors.ConflictException;
+
 import java.time.OffsetDateTime;
+import java.util.Objects;
+
 
 public class CreateDrawRequest {
     private String title;

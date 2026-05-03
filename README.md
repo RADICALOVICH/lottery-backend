@@ -5,6 +5,10 @@ Backend хакатоновой лотереи: регистрация польз
 Это README — точка входа для разработчика. Подробности архитектуры см. в коде и в будущих файлах из `docs/`.
 
 ---
+## Порты
+- **8080** - приложение.
+- **8081** - Swagger.
+- **8082** - тесты.
 
 ## Стек
 
@@ -257,7 +261,6 @@ docker compose --profile full up --build
 
 ```bash
 ./gradlew build      # компиляция + тесты + shadowJar
-./gradlew test       # только тесты
 ./gradlew run        # запуск приложения
 ./gradlew shadowJar  # fat-jar в build/libs/lottery-backend.jar
 ```
@@ -555,9 +558,55 @@ Flyway накатывает всё из `src/main/resources/db/migration/` пр�
 
 ## Тесты
 
+Для корректной работы тестов необходимо обеспечить права: команда docker ps должна выполняться без sudo.
+Для этого:
+
+
+```bash
+sudo groupadd docker
+```
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Применить эти изменения к текущие изменения к текущей терминальной сессии:
+```bash
+newgrp docker
+```
+
+### Стандартный отчет Gradle (Результаты тестов)
+
 ```bash
 ./gradlew test
 ```
+Или:
+
+```bash
+./gradlew test --rerun
+```
+
+**Где искать отчет:**
+build/reports/tests/test/index.html
+
+**Что там есть:**
+Список всех пройденных/упавших тестов, время выполнения и логи ошибок.
+
+
+### Отчет JaCoCo (Покрытие кода)
+
+Этот инструмент показывает, какой процент вашего кода (строки, ветвления) был реально затронут тестами. У вас он уже настроен в блоке tasks.jacocoTestReport.
+Как запустить:
+```bash
+./gradlew test jacocoTestReport
+```
+
+
+**Где искать отчет:**
+build/reports/jacoco/test/html/index.html
+
+**Что там есть:** Цветная разметка кода (зеленое — протестировано, красное — нет) и статистика по пакетам/классам.
+
 
 - **Unit-тесты** (`*Test`) — логика сервисов с моками репозиториев, валидации.
 - **Integration-тесты** (`*IT`) — поднимают Postgres через Testcontainers и бьют по настоящей БД. Docker должен быть запущен.
@@ -615,6 +664,7 @@ app.isProd=false
 sudo docker pull docker.swagger.io/swaggerapi/swagger-ui
 ```
 
+
 - **Запустить проект на порту 8080.**
 
 - **В терминале перейти в каталог, где располагается spring.yaml.**
@@ -629,7 +679,7 @@ cd swagger
 
 ```
 sudo docker run --rm -p 8081:8080 \
-  -e SWAGGER_JSON=/spec/spring.yaml \
+  -e SWAGGER_JSON=/spec/swagger.yaml \
   -v "$PWD":/spec \
   --name swaggerui swaggerapi/swagger-ui
 ```

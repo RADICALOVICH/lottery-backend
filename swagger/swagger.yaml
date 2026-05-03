@@ -252,13 +252,20 @@ paths:
                 login: admin
                 role: ADMIN
         "401":
-          description: Не авторизован или не ADMIN
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "403":
+          description: Не ADMIN
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponseBody"
 
-# UserController.java ← HTTP-ручка GET /admin/logged-in-users (требует ADMIN JWT)
+
+  # UserController.java ← HTTP-ручка GET /admin/logged-in-users (требует ADMIN JWT)
   /admin/logged-in-users:
     get:
       tags:
@@ -276,8 +283,14 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/UserListResponse"
+        "403":
+          description: Не ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
         "401":
-          description: Не авторизован или не ADMIN
+          description: Не авторизован
           content:
             application/json:
               schema:
@@ -362,6 +375,12 @@ paths:
                 $ref: "#/components/schemas/ErrorResponseBody"
         "404":
           description: Тираж не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "409":
+          description: Попытка провести тираж без проданных билетов.
           content:
             application/json:
               schema:
@@ -495,12 +514,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponseBody"
+        "409":
+          description: Попытка купить билет, если билетов нет.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
 
 # TicketController.java ← HTTP-ручка GET /me/tickets (требует USER JWT)
   /me/tickets:
     get:
       tags:
-        - Tickets
         - User
       summary: Мои билеты
       description: "Возвращает все билеты текущего пользователя. Требуется JWT токен USER."
@@ -526,7 +550,6 @@ paths:
   /me/results:
     get:
       tags:
-        - Tickets
         - User
       summary: Мои результаты
       description: "Возвращает результаты розыгрышей для билетов текущего пользователя (WIN/LOSE). Требуется JWT токен USER."
@@ -548,40 +571,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponseBody"
 
-# Readme.md
-# Цитата: GET /tickets?drawId=1&status=AVAILABLE (админский список билетов)
-  /tickets:
-    get:
-      tags:
-        - Tickets
-      summary: Получить список билетов
-      description: "Список всех билетов с фильтрацией по drawId и status."
-      parameters:
-        - name: drawId
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-        - name: status
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - AVAILABLE
-              - SOLD
-              - WIN
-              - LOSE
-      responses:
-        "200":
-          description: Список билетов
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TicketDto"
 
 # Readme.md
 # Цитата: TicketController.java ← HTTP-ручки /tickets/*

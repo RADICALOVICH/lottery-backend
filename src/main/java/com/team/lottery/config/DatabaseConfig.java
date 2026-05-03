@@ -15,20 +15,33 @@ import javax.sql.DataSource;
  * Настройка доступа к БД:
  *   1. Поднимает HikariCP-пул на основе AppConfig.
  *   2. Прогоняет миграции Flyway из classpath:db/migration.
- *
- * Падение на любом этапе — IllegalStateException: приложение не должно стартовать без БД.
+ *   3. Предоставляет доступ к DataSource для тестов.
  */
 public final class DatabaseConfig {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseConfig.class);
 
+    // Static reference to hold the instance for access across the app and tests
+    private static HikariDataSource dataSource;
+
     private DatabaseConfig() {
     }
 
     public static DataSource init(AppConfig cfg) {
-        HikariDataSource ds = createDataSource(cfg);
-        runMigrations(ds);
-        return ds;
+        if (dataSource != null) {
+            return dataSource;
+        }
+
+        dataSource = createDataSource(cfg);
+        runMigrations(dataSource);
+        return dataSource;
+    }
+
+    public static HikariDataSource getDataSource() {
+        if (dataSource == null) {
+            throw new IllegalStateException("Database not initialized. Call init(AppConfig) first.");
+        }
+        return dataSource;
     }
 
     private static HikariDataSource createDataSource(AppConfig cfg) {

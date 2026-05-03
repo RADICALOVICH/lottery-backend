@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.sql.Connection;
@@ -74,10 +75,13 @@ public class DrawService {
 
 
     public Draw createDraw(CreateDrawRequest request, Long adminId) {
+
+        ValidateEndDate(request.getEndDate());
         Validators.notBlank(request.getTitle(), "title");
         Validators.notNull(request.getEndDate(), "endDate");
         Validators.notNull(request.getTotalTickets(), "totalTickets");
         Validators.positive(request.getTotalTickets(), "totalTickets");
+
         Draw draw = new Draw();
         draw.setTitle(request.getTitle());
         draw.setEndDate(request.getEndDate());
@@ -104,7 +108,7 @@ public class DrawService {
         return savedDraw;
     }
 
-    public void runDraw(Long drawId) {
+    public Draw runDraw(Long drawId) {
         Draw draw = drawRepository.findById(drawId)
                 .orElseThrow(() -> new NotFoundException("Draw not found with id: " + drawId));
 
@@ -114,6 +118,14 @@ public class DrawService {
 
         if (draw.getStatus() != DrawStatus.CLOSED) {
             throw new ConflictException("Draw must be CLOSED to run");
+        }
+
+        // Запрет проведения розыгрыша, если нет проданных билетов.
+         List<Ticket> soldTickets = ticketRepository.findByDrawId(drawId).stream()
+                .filter(t -> t.status() == TicketStatus.SOLD)
+                .toList();
+        if (soldTickets.isEmpty()) {
+            throw new ConflictException("No tickets sold - cannot run draw");
         }
 
         List<Ticket> allTickets = ticketRepository.findByDrawId(drawId);
@@ -168,6 +180,11 @@ public class DrawService {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to run draw in transaction", e);
         }
+
+        // Неэффективно (второй запрос в БД). Но надежно.
+        // Пренебрегаем эффективностью: розыгрыш проводится нечасто.
+        return drawRepository.findById(drawId)
+                .orElseThrow(() -> new NotFoundException("Draw not found"));
     }
 
     public List<Draw> getAllDraws() {
@@ -195,5 +212,13 @@ public class DrawService {
 
     public void updateDrawStatus(Long drawId, DrawStatus status) {
         drawRepository.updateStatus(drawId, status);
+    }
+
+    private void ValidateEndDate(OffsetDateTime endDate) {
+        // Дата окончания не должна быть в прошлом.
+        Objects.requireNonNull(endDate, "End date must not be null");
+        if (endDate.isBefore(OffsetDateTime.now())) {
+            throw new ConflictException("The draw end date cannot be in the past");
+        }
     }
 }
