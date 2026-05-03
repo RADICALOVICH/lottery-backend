@@ -91,7 +91,7 @@ Authorization: Bearer {{adminToken}}
 
 {
   "title": "Draw HTTP Auto Test",
-  "endDate": "2026-04-25T18:00:00+03:00",
+    "endDate": "2026-06-25T18:00:00+03:00",
   "totalTickets": 5
 }
 

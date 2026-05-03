@@ -75,6 +75,7 @@ public class AuthController {
             String login = request.getLogin().trim();
 
             UserAuthData user = userRepository.findByLogin(login)
+                    .orElseThrow(() -> new UnauthorizedException(failureMsg));
             if (user == null) {
                 throw new UnauthorizedException(failureMsg);
             }

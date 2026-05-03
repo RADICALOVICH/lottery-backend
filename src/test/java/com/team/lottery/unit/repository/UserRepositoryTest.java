@@ -34,7 +34,7 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
         long id = userRepository.createUser(login, hash);
 
         assertThat(id).isPositive();
-        UserAuthData found = userRepository.findByLogin(login);
+        UserAuthData found = userRepository.findByLogin(login).orElse(null);
         assertThat(found).isNotNull();
         assertThat(found.getLogin()).isEqualTo(login);
         assertThat(found.getPasswordHash()).isEqualTo(hash);
@@ -62,7 +62,8 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
         String hash = "secure_hash";
         userRepository.createUser(login, hash);
 
-        UserAuthData data = userRepository.findByLogin(login);
+        UserAuthData data = userRepository.findByLogin(login).orElse(null);
+
 
         assertThat(data).isNotNull();
         assertThat(data.getLogin()).isEqualTo(login);
@@ -76,7 +77,7 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
         */
         long id = userRepository.createUser("find_me", "pass");
 
-        UserResponse response = userRepository.findById(id);
+        UserResponse response = userRepository.findById(id).orElse(null);
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(id);

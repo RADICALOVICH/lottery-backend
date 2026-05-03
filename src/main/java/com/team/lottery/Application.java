@@ -93,6 +93,7 @@ public final class Application {
         log.info("Application started on port {}", cfg.port());
     }
 
+
     // Метод для запуска приложения из тестов с заданным port
     public static Javalin start(int port) {
         AppConfig cfg = AppConfig.load();
@@ -115,20 +116,21 @@ public final class Application {
 
         UserRepository userRepository = new UserRepository(ds);
         TokenService tokenService = new TokenService();
+        AuthService authService = new AuthService(tokenService, userRepository);
 
-        AuthController authController = new AuthController(userRepository, tokenService);
-        UserController userController = new UserController(userRepository, tokenService);
+        AuthController authController = new AuthController(userRepository, tokenService, authService);
+        UserController userController = new UserController(userRepository, tokenService, authService);
 
         DrawRepository drawRepository = new JdbcDrawRepository(ds);
         DrawResultRepository drawResultRepository = new JdbcDrawResultRepository(ds);
 
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository, drawRepository);
-        TicketController ticketController = new TicketController(ticketService, userRepository, tokenService);
+        TicketController ticketController = new TicketController(ticketService, authService);
 
         DrawService drawService = new DrawService(ds, drawRepository, drawResultRepository, ticketRepository);
         DrawController drawController = new DrawController(drawService);
-        AdminDrawController adminDrawController = new AdminDrawController(drawService, userRepository, tokenService);
+        AdminDrawController adminDrawController = new AdminDrawController(drawService, authService);
 
         DrawScheduler drawScheduler = new DrawScheduler(drawRepository, drawService);
 
@@ -160,4 +162,5 @@ public final class Application {
 
         return app;
     }
+
 }
