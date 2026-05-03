@@ -35,6 +35,7 @@ Thumbs.db
 # Внутренние заметки — не коммитим
 HANDOFF.md
 PROJECT.md
+refactor.md
 
 
 .postman/
