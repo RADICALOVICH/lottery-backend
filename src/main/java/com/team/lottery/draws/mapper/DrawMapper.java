@@ -17,12 +17,12 @@ public final class DrawMapper {
      */
 
     public static DrawResponse toResponse(Draw draw) {
-        return  new DrawResponse(
-                draw.getId(),
-                draw.getTitle(),
-                draw.getStatus(),
-                draw.getEndDate(),
-                draw.getTotalTickets()
+        return new DrawResponse(
+                draw.id(),
+                draw.title(),
+                draw.status(),
+                draw.endDate(),
+                draw.totalTickets()
         );
     }
 

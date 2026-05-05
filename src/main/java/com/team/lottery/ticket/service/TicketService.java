@@ -30,7 +30,7 @@ public class TicketService {
         Draw draw = drawRepository.findById(drawId)
                 .orElseThrow(() -> new NotFoundException("Draw not found"));
 
-        if (draw.getStatus() != DrawStatus.ACTIVE) {
+        if (draw.status() != DrawStatus.ACTIVE) {
             throw new ConflictException("Tickets can be bought only for ACTIVE draws");
         }
 

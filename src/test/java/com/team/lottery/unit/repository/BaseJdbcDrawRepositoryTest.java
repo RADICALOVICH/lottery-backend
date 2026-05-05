@@ -9,8 +9,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -21,10 +19,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 public abstract class BaseJdbcDrawRepositoryTest {
@@ -84,15 +78,19 @@ public abstract class BaseJdbcDrawRepositoryTest {
     }
 
     protected Draw saveCustomDraw(String title, DrawStatus status) {
-        Draw draw = new Draw();
-        draw.setTitle(title);
-        draw.setEndDate(OffsetDateTime.now().plusDays(1).truncatedTo(ChronoUnit.MICROS));
-        draw.setTotalTickets(100);
-        draw.setCreatedBy(testUserId);
+        Draw draw = new Draw(
+                null,
+                title,
+                null,
+                OffsetDateTime.now().plusDays(1).truncatedTo(ChronoUnit.MICROS),
+                100,
+                testUserId,
+                null
+        );
 
         Draw saved = repository.save(draw);
-        repository.updateStatus(saved.getId(), status);
-        return repository.findById(saved.getId()).orElseThrow();
+        repository.updateStatus(saved.id(), status);
+        return repository.findById(saved.id()).orElseThrow();
     }
 
     protected void forceUpdateEndDate(Long id, OffsetDateTime date) {

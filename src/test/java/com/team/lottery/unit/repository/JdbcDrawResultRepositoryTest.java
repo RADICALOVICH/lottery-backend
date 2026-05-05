@@ -34,11 +34,11 @@ class JdbcDrawResultRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
         Long ticketId;
         try (Connection conn = dataSource.getConnection()) {
-            ticketId = insertTicketForTest(conn, draw.getId(), 1);
+            ticketId = insertTicketForTest(conn, draw.id(), 1);
         }
 
         DrawResult result = new DrawResult();
-        result.setDrawId(draw.getId());
+        result.setDrawId(draw.id());
         result.setWinningTicketId(ticketId);
         result.setDrawnAt(OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS));
 
@@ -47,7 +47,7 @@ class JdbcDrawResultRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
         // Assert
         assertThat(saved.getId()).isNotNull();
-        Optional<DrawResult> found = resultRepository.findByDrawId(draw.getId());
+        Optional<DrawResult> found = resultRepository.findByDrawId(draw.id());
         assertThat(found).isPresent();
         assertThat(found.get().getWinningTicketId()).isEqualTo(ticketId);
     }
@@ -57,24 +57,24 @@ class JdbcDrawResultRepositoryTest extends BaseJdbcDrawRepositoryTest {
     void saveInTransactionTest() throws Exception {
         Draw draw = saveCustomDraw("Tx Draw", DrawStatus.ACTIVE);
         DrawResult result = new DrawResult();
-        result.setDrawId(draw.getId());
+        result.setDrawId(draw.id());
         result.setDrawnAt(OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS));
 
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
-            Long ticketId = insertTicketForTest(conn, draw.getId(), 777);
+            Long ticketId = insertTicketForTest(conn, draw.id(), 777);
             result.setWinningTicketId(ticketId);
 
             resultRepository.saveInTransaction(conn, result);
 
             // Проверка изоляции: в другом соединении данных еще нет
-            assertThat(resultRepository.findByDrawId(draw.getId())).isEmpty();
+            assertThat(resultRepository.findByDrawId(draw.id())).isEmpty();
 
             conn.commit();
         }
 
-        assertThat(resultRepository.findByDrawId(draw.getId())).isPresent();
+        assertThat(resultRepository.findByDrawId(draw.id())).isPresent();
     }
 
     /**

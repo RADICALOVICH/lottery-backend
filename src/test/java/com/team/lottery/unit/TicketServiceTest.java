@@ -159,10 +159,7 @@ class TicketServiceTest {
     }
 
     private Draw createDraw(DrawStatus status) {
-        Draw draw = new Draw();
-        draw.setId(drawId);
-        draw.setStatus(status);
-        return draw;
+        return new Draw(drawId, null, status, null, null, null, null);
     }
 
     private Ticket createTicket(long id, TicketStatus status, Long ownerId) {

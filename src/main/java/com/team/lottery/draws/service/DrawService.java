@@ -77,20 +77,24 @@ public class DrawService {
 
         DrawValidators.createDrawRequest(request);
 
-        Draw draw = new Draw();
-        draw.setTitle(request.title());
-        draw.setEndDate(request.endDate());
-        draw.setTotalTickets(request.totalTickets());
-        draw.setCreatedBy(adminId);
+        Draw draw = new Draw(
+                null,
+                request.title(),
+                null,
+                request.endDate(),
+                request.totalTickets(),
+                adminId,
+                null
+        );
 
         Draw savedDraw = drawRepository.save(draw);
 
         Instant createdAt = Instant.now();
 
-        for (int ticketNumber = 1; ticketNumber <= savedDraw.getTotalTickets(); ticketNumber++) {
+        for (int ticketNumber = 1; ticketNumber <= savedDraw.totalTickets(); ticketNumber++) {
             Ticket ticket = new Ticket(
                     0L,
-                    savedDraw.getId(),
+                    savedDraw.id(),
                     null,
                     ticketNumber,
                     TicketStatus.AVAILABLE,
@@ -107,11 +111,11 @@ public class DrawService {
         Draw draw = drawRepository.findById(drawId)
                 .orElseThrow(() -> new NotFoundException("Draw not found with id: " + drawId));
 
-        if (draw.getStatus() == DrawStatus.COMPLETED) {
+        if (draw.status() == DrawStatus.COMPLETED) {
             throw new ConflictException("Draw is already completed");
         }
 
-        if (draw.getStatus() != DrawStatus.CLOSED) {
+        if (draw.status() != DrawStatus.CLOSED) {
             throw new ConflictException("Draw must be CLOSED to run");
         }
 

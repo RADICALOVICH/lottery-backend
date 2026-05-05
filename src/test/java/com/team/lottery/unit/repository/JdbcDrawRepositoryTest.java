@@ -3,19 +3,10 @@ package com.team.lottery.unit.repository;
 
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
-import com.team.lottery.draws.repository.JdbcDrawRepository;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -29,21 +20,25 @@ class JdbcDrawRepositoryTest extends BaseJdbcDrawRepositoryTest {
     @Test
     @DisplayName("Успешное сохранение и поиск тиража по ID")
     void saveAndFindById() {
-        Draw draw = new Draw();
-        draw.setTitle("Jackpot 777");
-        draw.setEndDate(OffsetDateTime.now().plusDays(7).truncatedTo(ChronoUnit.MICROS));
-        draw.setTotalTickets(1000);
-        draw.setCreatedBy(testUserId);
+        Draw draw = new Draw(
+                null,
+                "Jackpot 777",
+                null,
+                OffsetDateTime.now().plusDays(7).truncatedTo(ChronoUnit.MICROS),
+                1000,
+                testUserId,
+                null
+        );
 
         Draw saved = repository.save(draw);
 
-        assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getTitle()).isEqualTo("Jackpot 777");
-        assertThat(saved.getStatus()).isEqualTo(DrawStatus.ACTIVE); // По умолчанию в БД
+        assertThat(saved.id()).isNotNull();
+        assertThat(saved.title()).isEqualTo("Jackpot 777");
+        assertThat(saved.status()).isEqualTo(DrawStatus.ACTIVE); // По умолчанию в БД
 
-        Optional<Draw> found = repository.findById(saved.getId());
+        Optional<Draw> found = repository.findById(saved.id());
         assertThat(found).isPresent();
-        assertThat(found.get().getTitle()).isEqualTo("Jackpot 777");
+        assertThat(found.get().title()).isEqualTo("Jackpot 777");
     }
 
     @Test
@@ -56,7 +51,7 @@ class JdbcDrawRepositoryTest extends BaseJdbcDrawRepositoryTest {
         List<Draw> activeDraws = repository.findByStatus(DrawStatus.ACTIVE);
 
         assertThat(activeDraws).hasSize(2);
-        assertThat(activeDraws).extracting(Draw::getTitle)
+        assertThat(activeDraws).extracting(Draw::title)
                 .containsExactlyInAnyOrder("Active 1", "Active 2");
     }
 
@@ -67,19 +62,19 @@ class JdbcDrawRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
         // 1. Просрочен, статус ACTIVE -> должен быть найден
         Draw expired = saveCustomDraw("Expired", DrawStatus.ACTIVE);
-        forceUpdateEndDate(expired.getId(), now.minusMinutes(5));
+        forceUpdateEndDate(expired.id(), now.minusMinutes(5));
 
         // 2. Будущий, статус ACTIVE -> не должен быть найден
         saveCustomDraw("Future", DrawStatus.ACTIVE);
 
         // 3. Просрочен, но статус CLOSED -> не должен быть найден
         Draw closed = saveCustomDraw("Closed", DrawStatus.CLOSED);
-        forceUpdateEndDate(closed.getId(), now.minusMinutes(5));
+        forceUpdateEndDate(closed.id(), now.minusMinutes(5));
 
         List<Draw> result = repository.findActiveEndedDraws(now);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).isEqualTo("Expired");
+        assertThat(result.get(0).title()).isEqualTo("Expired");
     }
 
     @Test
@@ -90,17 +85,17 @@ class JdbcDrawRepositoryTest extends BaseJdbcDrawRepositoryTest {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
-            repository.updateStatusInTransaction(conn, draw.getId(), DrawStatus.COMPLETED);
+            repository.updateStatusInTransaction(conn, draw.id(), DrawStatus.COMPLETED);
 
             // В другом соединении статус все еще старый (изоляция транзакций)
-            Draw drawBeforeCommit = repository.findById(draw.getId()).orElseThrow();
-            assertThat(drawBeforeCommit.getStatus()).isEqualTo(DrawStatus.ACTIVE);
+            Draw drawBeforeCommit = repository.findById(draw.id()).orElseThrow();
+            assertThat(drawBeforeCommit.status()).isEqualTo(DrawStatus.ACTIVE);
 
             conn.commit();
         }
 
-        Draw drawAfterCommit = repository.findById(draw.getId()).orElseThrow();
-        assertThat(drawAfterCommit.getStatus()).isEqualTo(DrawStatus.COMPLETED);
+        Draw drawAfterCommit = repository.findById(draw.id()).orElseThrow();
+        assertThat(drawAfterCommit.status()).isEqualTo(DrawStatus.COMPLETED);
     }
 
 }

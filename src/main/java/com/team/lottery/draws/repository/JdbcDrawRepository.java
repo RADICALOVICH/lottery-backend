@@ -31,10 +31,10 @@ public class JdbcDrawRepository implements DrawRepository {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setString(1, draw.getTitle());
-            statement.setObject(2, draw.getEndDate());
-            statement.setInt(3, draw.getTotalTickets());
-            statement.setLong(4, draw.getCreatedBy());
+            statement.setString(1, draw.title());
+            statement.setObject(2, draw.endDate());
+            statement.setInt(3, draw.totalTickets());
+            statement.setLong(4, draw.createdBy());
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -185,14 +185,14 @@ public class JdbcDrawRepository implements DrawRepository {
     }
 
     private Draw mapDraw(ResultSet rs) throws SQLException {
-        Draw draw = new Draw();
-        draw.setId(rs.getLong("id"));
-        draw.setTitle(rs.getString("title"));
-        draw.setStatus(DrawStatus.valueOf(rs.getString("status")));
-        draw.setEndDate(rs.getObject("end_date", OffsetDateTime.class));
-        draw.setTotalTickets(rs.getInt("total_tickets"));
-        draw.setCreatedBy(rs.getLong("created_by"));
-        draw.setCreatedAt(rs.getObject("created_at", OffsetDateTime.class));
-        return draw;
+        return new Draw(
+                rs.getLong("id"),
+                rs.getString("title"),
+                DrawStatus.valueOf(rs.getString("status")),
+                rs.getObject("end_date", OffsetDateTime.class),
+                rs.getInt("total_tickets"),
+                rs.getLong("created_by"),
+                rs.getObject("created_at", OffsetDateTime.class)
+        );
     }
 }

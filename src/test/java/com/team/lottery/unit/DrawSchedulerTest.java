@@ -6,7 +6,6 @@ import com.team.lottery.draws.repository.DrawRepository;
 import com.team.lottery.draws.scheduler.DrawScheduler;
 import com.team.lottery.draws.service.DrawService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,9 +34,7 @@ class DrawSchedulerTest {
 
     @BeforeEach
     void setUp() {
-        testDraw = new Draw();
-        testDraw.setId(100L);
-        testDraw.setTitle("Scheduled Draw");
+        testDraw = new Draw(100L, "Scheduled Draw", null, null, null, null, null);
     }
 
     @Test
@@ -69,10 +66,8 @@ class DrawSchedulerTest {
         */
 
         // Два тиража, первый вызовет ошибку
-        Draw failedDraw = new Draw();
-        failedDraw.setId(1L);
-        Draw successDraw = new Draw();
-        successDraw.setId(2L);
+        Draw failedDraw = new Draw(1L, null, null, null, null, null, null);
+        Draw successDraw = new Draw(2L, null, null, null, null, null, null);
 
         when(drawRepository.findActiveEndedDraws(any(OffsetDateTime.class)))
                 .thenReturn(List.of(failedDraw, successDraw));

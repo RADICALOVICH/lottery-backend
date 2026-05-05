@@ -44,11 +44,11 @@ public class DrawScheduler {
 
             for (Draw draw : readyDraws) {
                 try {
-                    drawRepository.updateStatus(draw.getId(), DrawStatus.CLOSED);
-                    drawService.runDraw(draw.getId());
-                    log.info("Draw {} was processed by scheduler", draw.getId());
+                    drawRepository.updateStatus(draw.id(), DrawStatus.CLOSED);
+                    drawService.runDraw(draw.id());
+                    log.info("Draw {} was processed by scheduler", draw.id());
                 } catch (Exception e) {
-                    log.error("Failed to process draw {} in scheduler", draw.getId(), e);
+                    log.error("Failed to process draw {} in scheduler", draw.id(), e);
                 }
             }
         } catch (Exception e) {

@@ -26,13 +26,7 @@ class DrawMapperTest {
         OffsetDateTime endDate = OffsetDateTime.now().plusDays(7);
         int totalTickets = 500;
 
-        Draw draw = new Draw();
-        draw.setId(id);
-        draw.setTitle(title);
-        draw.setStatus(status);
-        draw.setEndDate(endDate);
-        draw.setTotalTickets(totalTickets);
-
+        Draw draw = new Draw(id, title, status, endDate, totalTickets, null, null);
 
         DrawResponse response = DrawMapper.toResponse(draw);
 
