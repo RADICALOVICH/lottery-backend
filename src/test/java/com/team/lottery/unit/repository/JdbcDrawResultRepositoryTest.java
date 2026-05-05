@@ -37,34 +37,34 @@ class JdbcDrawResultRepositoryTest extends BaseJdbcDrawRepositoryTest {
             ticketId = insertTicketForTest(conn, draw.id(), 1);
         }
 
-        DrawResult result = new DrawResult();
-        result.setDrawId(draw.id());
-        result.setWinningTicketId(ticketId);
-        result.setDrawnAt(OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS));
+        DrawResult result = new DrawResult(
+                null,
+                draw.id(),
+                ticketId,
+                OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS)
+        );
 
         // Act
         DrawResult saved = resultRepository.save(result);
 
         // Assert
-        assertThat(saved.getId()).isNotNull();
+        assertThat(saved.id()).isNotNull();
         Optional<DrawResult> found = resultRepository.findByDrawId(draw.id());
         assertThat(found).isPresent();
-        assertThat(found.get().getWinningTicketId()).isEqualTo(ticketId);
+        assertThat(found.get().winningTicketId()).isEqualTo(ticketId);
     }
 
     @Test
     @DisplayName("Должен сохранять результат внутри транзакции и откатывать при ошибке")
     void saveInTransactionTest() throws Exception {
         Draw draw = saveCustomDraw("Tx Draw", DrawStatus.ACTIVE);
-        DrawResult result = new DrawResult();
-        result.setDrawId(draw.id());
-        result.setDrawnAt(OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS));
+        OffsetDateTime drawnAt = OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
 
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
             Long ticketId = insertTicketForTest(conn, draw.id(), 777);
-            result.setWinningTicketId(ticketId);
+            DrawResult result = new DrawResult(null, draw.id(), ticketId, drawnAt);
 
             resultRepository.saveInTransaction(conn, result);
 

@@ -50,11 +50,7 @@ class DrawMapperTest {
         Long winningTicketId = 1L;
         OffsetDateTime drawnAt = OffsetDateTime.now();
 
-        DrawResult result = new DrawResult();
-        result.setDrawId(drawId);
-        result.setWinningTicketId(winningTicketId);
-        result.setDrawnAt(drawnAt);
-
+        DrawResult result = new DrawResult(null, drawId, winningTicketId, drawnAt);
 
         DrawResultResponse response = DrawMapper.toResultResponse(result);
 

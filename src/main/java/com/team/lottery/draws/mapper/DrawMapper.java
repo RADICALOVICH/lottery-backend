@@ -28,9 +28,9 @@ public final class DrawMapper {
 
     public static DrawResultResponse toResultResponse(DrawResult drawResult) {
         return new DrawResultResponse(
-                drawResult.getDrawId(),
-                drawResult.getWinningTicketId(),
-                drawResult.getDrawnAt()
+                drawResult.drawId(),
+                drawResult.winningTicketId(),
+                drawResult.drawnAt()
         );
     }
 }

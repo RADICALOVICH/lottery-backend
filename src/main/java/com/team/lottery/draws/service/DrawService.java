@@ -158,10 +158,12 @@ public class DrawService {
                         DrawStatus.COMPLETED
                 );
 
-                DrawResult drawResult = new DrawResult();
-                drawResult.setDrawId(drawId);
-                drawResult.setWinningTicketId(winningTicket.id());
-                drawResult.setDrawnAt(OffsetDateTime.now());
+                DrawResult drawResult = new DrawResult(
+                        null,
+                        drawId,
+                        winningTicket.id(),
+                        OffsetDateTime.now()
+                );
 
                 drawResultRepository.saveInTransaction(connection, drawResult);
 
