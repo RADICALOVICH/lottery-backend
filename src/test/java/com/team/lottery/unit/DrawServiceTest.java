@@ -49,10 +49,11 @@ class DrawServiceTest {
         Должен сохранять тираж и создавать указанное количество билетов.
         * */
         Long adminId = 1L;
-        CreateDrawRequest request = new CreateDrawRequest();
-        request.setTitle("New Year Draw");
-        request.setEndDate(OffsetDateTime.now().plusDays(1));
-        request.setTotalTickets(3);
+        CreateDrawRequest request = new CreateDrawRequest(
+                "New Year Draw",
+                OffsetDateTime.now().plusDays(1),
+                3
+        );
 
         Draw savedDraw = new Draw();
         savedDraw.setId(10L);
@@ -74,10 +75,11 @@ class DrawServiceTest {
         /*
         Должен бросать ValidationException, если дата окончания в прошлом.
         * */
-        CreateDrawRequest request = new CreateDrawRequest();
-        request.setTitle("Test draw");
-        request.setTotalTickets(3);
-        request.setEndDate(OffsetDateTime.now().minusDays(1));
+        CreateDrawRequest request = new CreateDrawRequest(
+                "Test draw",
+                OffsetDateTime.now().minusDays(1),
+                3
+        );
 
         assertThatThrownBy(() -> drawService.createDraw(request, 1L))
                 .isInstanceOf(ValidationException.class)

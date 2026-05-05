@@ -78,9 +78,9 @@ public class DrawService {
         DrawValidators.createDrawRequest(request);
 
         Draw draw = new Draw();
-        draw.setTitle(request.getTitle());
-        draw.setEndDate(request.getEndDate());
-        draw.setTotalTickets(request.getTotalTickets());
+        draw.setTitle(request.title());
+        draw.setEndDate(request.endDate());
+        draw.setTotalTickets(request.totalTickets());
         draw.setCreatedBy(adminId);
 
         Draw savedDraw = drawRepository.save(draw);

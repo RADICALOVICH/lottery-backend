@@ -13,11 +13,11 @@ public final class DrawValidators {
 
     public static void createDrawRequest(CreateDrawRequest req) {
         Validators.notNull(req, "request");
-        Validators.notBlank(req.getTitle(), "title");
-        Validators.notNull(req.getEndDate(), "endDate");
-        Validators.notNull(req.getTotalTickets(), "totalTickets");
-        Validators.positive(req.getTotalTickets(), "totalTickets");
-        endDateInFuture(req.getEndDate());
+        Validators.notBlank(req.title(), "title");
+        Validators.notNull(req.endDate(), "endDate");
+        Validators.notNull(req.totalTickets(), "totalTickets");
+        Validators.positive(req.totalTickets(), "totalTickets");
+        endDateInFuture(req.endDate());
     }
 
     private static void endDateInFuture(OffsetDateTime endDate) {
