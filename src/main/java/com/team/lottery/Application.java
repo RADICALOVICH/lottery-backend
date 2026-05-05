@@ -63,8 +63,6 @@ public final class Application {
 
         DrawScheduler drawScheduler = new DrawScheduler(drawRepository, drawService);
 
-        System.out.println("DEBUG: isProd = " + cfg.isProd());
-
         Javalin app = JavalinConfig.create(
                 cfg.isProd(),
                 cfg.port(),

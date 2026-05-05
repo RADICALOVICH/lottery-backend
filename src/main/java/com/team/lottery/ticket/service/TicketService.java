@@ -79,7 +79,6 @@ public class TicketService {
         List<Ticket> results = ticketRepository.findByOwnerId(userId).stream()
                 .filter(ticket -> ticket.status() == TicketStatus.WIN || ticket.status() == TicketStatus.LOSE)
                 .toList();
-        System.out.println("Results for user " + userId + ": " + results);
         return results;
     }
 
