@@ -27,10 +27,10 @@ public final class DrawMapper {
     }
 
     public static DrawResultResponse toResultResponse(DrawResult drawResult) {
-        DrawResultResponse response = new DrawResultResponse();
-        response.setDrawId(drawResult.getDrawId());
-        response.setWinningTicketId(drawResult.getWinningTicketId());
-        response.setDrawnAt(drawResult.getDrawnAt());
-        return response;
+        return new DrawResultResponse(
+                drawResult.getDrawId(),
+                drawResult.getWinningTicketId(),
+                drawResult.getDrawnAt()
+        );
     }
 }
