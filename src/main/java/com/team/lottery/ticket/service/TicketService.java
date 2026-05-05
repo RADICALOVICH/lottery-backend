@@ -1,7 +1,6 @@
 package com.team.lottery.ticket.service;
 
 import com.team.lottery.common.errors.ConflictException;
-import com.team.lottery.common.errors.ForbiddenException;
 import com.team.lottery.common.errors.NotFoundException;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
@@ -25,10 +24,6 @@ public class TicketService {
         this.dataSource = dataSource;
         this.ticketRepository = ticketRepository;
         this.drawRepository = drawRepository;
-    }
-
-    public void generateTickets(long drawId, int totalTickets) {
-        ticketRepository.createTickets(drawId, totalTickets);
     }
 
     public Ticket buyTicket(long drawId, long userId) {
@@ -81,17 +76,5 @@ public class TicketService {
                 .toList();
         return results;
     }
-
-    public Ticket getMyTicket(long ticketId, long userId) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new NotFoundException("Ticket not found"));
-
-        if (ticket.ownerId() == null || !ticket.ownerId().equals(userId)) {
-            throw new ForbiddenException("Ticket does not belong to current user");
-        }
-
-        return ticket;
-    }
-
 
 }

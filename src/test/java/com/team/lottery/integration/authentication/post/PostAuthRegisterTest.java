@@ -58,7 +58,7 @@ public class PostAuthRegisterTest extends BaseTest {
          * Регистрация с пустым логином
          * Сценарий: Валидация обязательных полей
          * Вход: POST /auth/register с { "password": "pass123" }
-         * Ожидаемый результат: 400 Bad Request, { "code": "VALIDATION_FAILED", "message": "Login is required" }
+         * Ожидаемый результат: 400 Bad Request, { "code": "VALIDATION_FAILED", "message": "login must not be blank" }
          */
         given()
                 .contentType(ContentType.JSON)
@@ -73,7 +73,7 @@ public class PostAuthRegisterTest extends BaseTest {
                 .statusCode(400)
                 .contentType(ContentType.JSON)
                 .body("code", equalTo("VALIDATION_FAILED"))
-                .body("message", equalTo("Login is required"));
+                .body("message", equalTo("login must not be blank"));
     }
 
 
