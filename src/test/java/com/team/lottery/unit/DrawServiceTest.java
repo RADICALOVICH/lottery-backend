@@ -2,6 +2,7 @@ package com.team.lottery.unit;
 
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.NotFoundException;
+import com.team.lottery.common.errors.ValidationException;
 import com.team.lottery.draws.dto.CreateDrawRequest;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
@@ -71,14 +72,16 @@ class DrawServiceTest {
     @Test
     void createDraw_PastDate_ThrowsException() {
         /*
-        Должен бросать исключение, если дата окончания в прошлом.
+        Должен бросать ValidationException, если дата окончания в прошлом.
         * */
         CreateDrawRequest request = new CreateDrawRequest();
+        request.setTitle("Test draw");
+        request.setTotalTickets(3);
         request.setEndDate(OffsetDateTime.now().minusDays(1));
 
         assertThatThrownBy(() -> drawService.createDraw(request, 1L))
-                .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("end date cannot be in the past");
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("endDate must not be in the past");
     }
 
     @Test

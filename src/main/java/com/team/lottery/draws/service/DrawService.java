@@ -2,13 +2,13 @@ package com.team.lottery.draws.service;
 
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.NotFoundException;
-import com.team.lottery.common.validation.Validators;
 import com.team.lottery.draws.dto.CreateDrawRequest;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawResult;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
 import com.team.lottery.draws.repository.DrawResultRepository;
+import com.team.lottery.draws.validation.DrawValidators;
 import com.team.lottery.ticket.model.Ticket;
 import com.team.lottery.ticket.model.TicketStatus;
 import com.team.lottery.ticket.repository.TicketRepository;
@@ -17,7 +17,6 @@ import javax.sql.DataSource;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.sql.Connection;
@@ -76,11 +75,7 @@ public class DrawService {
 
     public Draw createDraw(CreateDrawRequest request, Long adminId) {
 
-        ValidateEndDate(request.getEndDate());
-        Validators.notBlank(request.getTitle(), "title");
-        Validators.notNull(request.getEndDate(), "endDate");
-        Validators.notNull(request.getTotalTickets(), "totalTickets");
-        Validators.positive(request.getTotalTickets(), "totalTickets");
+        DrawValidators.createDrawRequest(request);
 
         Draw draw = new Draw();
         draw.setTitle(request.getTitle());
@@ -214,11 +209,4 @@ public class DrawService {
         drawRepository.updateStatus(drawId, status);
     }
 
-    private void ValidateEndDate(OffsetDateTime endDate) {
-        // Дата окончания не должна быть в прошлом.
-        Objects.requireNonNull(endDate, "End date must not be null");
-        if (endDate.isBefore(OffsetDateTime.now())) {
-            throw new ConflictException("The draw end date cannot be in the past");
-        }
-    }
 }

@@ -2,15 +2,14 @@ package com.team.lottery.users.controller;
 
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.UnauthorizedException;
-import com.team.lottery.common.errors.ValidationException;
 import com.team.lottery.users.dto.LoginRequest;
 import com.team.lottery.users.dto.RegisterRequest;
 import com.team.lottery.users.model.UserAuthData;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.AuthService;
 import com.team.lottery.users.service.TokenService;
-import com.team.lottery.users.util.AuthValidationUtil;
 import com.team.lottery.users.util.PasswordUtil;
+import com.team.lottery.users.validation.AuthValidators;
 import io.javalin.config.RoutesConfig;
 
 import java.util.Map;
@@ -31,15 +30,8 @@ public class AuthController {
         routes.post("/auth/register", ctx -> {
             RegisterRequest request = ctx.bodyAsClass(RegisterRequest.class);
 
-            String loginError = AuthValidationUtil.validateLogin(request.getLogin());
-            if (loginError != null) {
-                throw new ValidationException(loginError);
-            }
-
-            String passwordError = AuthValidationUtil.validatePassword(request.getPassword());
-            if (passwordError != null) {
-                throw new ValidationException(passwordError);
-            }
+            AuthValidators.login(request.getLogin());
+            AuthValidators.password(request.getPassword());
 
             String login = request.getLogin().trim();
 
@@ -62,15 +54,8 @@ public class AuthController {
             String failureMsg = "Invalid login or password";
             LoginRequest request = ctx.bodyAsClass(LoginRequest.class);
 
-            String loginError = AuthValidationUtil.validateLogin(request.getLogin());
-            if (loginError != null) {
-                throw new ValidationException(loginError);
-            }
-
-            String passwordError = AuthValidationUtil.validatePassword(request.getPassword());
-            if (passwordError != null) {
-                throw new ValidationException(passwordError);
-            }
+            AuthValidators.login(request.getLogin());
+            AuthValidators.password(request.getPassword());
 
             String login = request.getLogin().trim();
 

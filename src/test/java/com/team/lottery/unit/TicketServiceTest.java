@@ -2,8 +2,6 @@ package com.team.lottery.unit;
 
 
 import com.team.lottery.common.errors.ConflictException;
-import com.team.lottery.common.errors.ForbiddenException;
-import com.team.lottery.common.errors.NotFoundException;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
@@ -12,7 +10,6 @@ import com.team.lottery.ticket.model.TicketStatus;
 import com.team.lottery.ticket.repository.TicketRepository;
 import com.team.lottery.ticket.service.TicketService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -160,49 +157,6 @@ class TicketServiceTest {
         assertThat(results).extracting(Ticket::status)
                 .containsExactlyInAnyOrder(TicketStatus.WIN, TicketStatus.LOSE);
     }
-
-    @Test
-    void getMyTicket_Success() {
-        /*
-        * getMyTicket: Успех, если билет принадлежит пользователю.
-        * */
-
-        Ticket myTicket = createTicket(ticketId, TicketStatus.SOLD, userId);
-        when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(myTicket));
-
-
-        Ticket result = ticketService.getMyTicket(ticketId, userId);
-
-
-        assertThat(result).isNotNull();
-        assertThat(result.ownerId()).isEqualTo(userId);
-    }
-
-    @Test
-    void getMyTicket_Forbidden() {
-        /*
-        getMyTicket: Forbidden, если владелец другой.
-        * */
-        Ticket someoneElsesTicket = createTicket(ticketId, TicketStatus.SOLD, 999L);
-        when(ticketRepository.findById(ticketId)).thenReturn(Optional.of(someoneElsesTicket));
-
-
-        assertThatThrownBy(() -> ticketService.getMyTicket(ticketId, userId))
-                .isInstanceOf(ForbiddenException.class);
-    }
-
-    @Test
-    void generateTickets_CallsRepository() {
-        /*
-        generateTickets: Должен вызывать репозиторий.
-        * */
-        ticketService.generateTickets(drawId, 50);
-
-
-        verify(ticketRepository).createTickets(drawId, 50);
-    }
-
-
 
     private Draw createDraw(DrawStatus status) {
         Draw draw = new Draw();

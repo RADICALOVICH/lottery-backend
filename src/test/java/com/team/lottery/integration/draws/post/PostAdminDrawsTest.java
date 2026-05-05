@@ -26,12 +26,12 @@ public class PostAdminDrawsTest extends BaseTest {
     private String url = "/admin/draws";
 
     @Test
-    void shouldReturn409WhenEndDateInPast() {
+    void shouldReturn400WhenEndDateInPast() {
         /*
         Дата окончания тиража в прошлом
         Сценарий: Создание тиража с endDate < now()
         Вход: POST /admin/draws с endDate в прошлом
-        Ожидаемый результат: 409
+        Ожидаемый результат: 400
         * */
 
         // 1. Создание админа (используем вспомогательный подход)
@@ -67,10 +67,10 @@ public class PostAdminDrawsTest extends BaseTest {
                 .when()
                 .post(url)
                 .then()
-                .statusCode(409)
-                .body("code", equalTo("CONFLICT"))
+                .statusCode(400)
+                .body("code", equalTo("VALIDATION_FAILED"))
                 .body("message", anyOf(
-                        containsString("The draw end date cannot be in the past")
+                        containsString("endDate must not be in the past")
                 ));
     }
 
