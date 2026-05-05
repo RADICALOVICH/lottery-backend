@@ -30,15 +30,15 @@ public class JdbcDrawResultRepository implements DrawResultRepository {
         try (Connection connection = ds.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setLong(1, drawResult.getDrawId());
+            statement.setLong(1, drawResult.drawId());
 
-            if (drawResult.getWinningTicketId() != null) {
-                statement.setLong(2, drawResult.getWinningTicketId());
+            if (drawResult.winningTicketId() != null) {
+                statement.setLong(2, drawResult.winningTicketId());
             } else {
                 statement.setNull(2, Types.BIGINT);
             }
 
-            statement.setObject(3, drawResult.getDrawnAt());
+            statement.setObject(3, drawResult.drawnAt());
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -61,15 +61,15 @@ public class JdbcDrawResultRepository implements DrawResultRepository {
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
 
-            statement.setLong(1, drawResult.getDrawId());
+            statement.setLong(1, drawResult.drawId());
 
-            if (drawResult.getWinningTicketId() != null) {
-                statement.setLong(2, drawResult.getWinningTicketId());
+            if (drawResult.winningTicketId() != null) {
+                statement.setLong(2, drawResult.winningTicketId());
             } else {
                 statement.setNull(2, Types.BIGINT);
             }
 
-            statement.setObject(3, drawResult.getDrawnAt());
+            statement.setObject(3, drawResult.drawnAt());
 
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -107,16 +107,14 @@ public class JdbcDrawResultRepository implements DrawResultRepository {
     }
 
     private DrawResult mapDrawResult(ResultSet rs) throws SQLException {
-        DrawResult drawResult = new DrawResult();
-        drawResult.setId(rs.getLong("id"));
-        drawResult.setDrawId(rs.getLong("draw_id"));
+        long winningTicketIdRaw = rs.getLong("winning_ticket_id");
+        Long winningTicketId = rs.wasNull() ? null : winningTicketIdRaw;
 
-        long winningTicketId = rs.getLong("winning_ticket_id");
-        if (!rs.wasNull()) {
-            drawResult.setWinningTicketId(winningTicketId);
-        }
-
-        drawResult.setDrawnAt(rs.getObject("drawn_at", OffsetDateTime.class));
-        return drawResult;
+        return new DrawResult(
+                rs.getLong("id"),
+                rs.getLong("draw_id"),
+                winningTicketId,
+                rs.getObject("drawn_at", OffsetDateTime.class)
+        );
     }
 }

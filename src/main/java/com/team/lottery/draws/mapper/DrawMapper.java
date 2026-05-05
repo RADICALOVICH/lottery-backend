@@ -17,20 +17,20 @@ public final class DrawMapper {
      */
 
     public static DrawResponse toResponse(Draw draw) {
-        return  new DrawResponse(
-                draw.getId(),
-                draw.getTitle(),
-                draw.getStatus(),
-                draw.getEndDate(),
-                draw.getTotalTickets()
+        return new DrawResponse(
+                draw.id(),
+                draw.title(),
+                draw.status(),
+                draw.endDate(),
+                draw.totalTickets()
         );
     }
 
     public static DrawResultResponse toResultResponse(DrawResult drawResult) {
-        DrawResultResponse response = new DrawResultResponse();
-        response.setDrawId(drawResult.getDrawId());
-        response.setWinningTicketId(drawResult.getWinningTicketId());
-        response.setDrawnAt(drawResult.getDrawnAt());
-        return response;
+        return new DrawResultResponse(
+                drawResult.drawId(),
+                drawResult.winningTicketId(),
+                drawResult.drawnAt()
+        );
     }
 }

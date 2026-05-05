@@ -34,47 +34,47 @@ class JdbcDrawResultRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
         Long ticketId;
         try (Connection conn = dataSource.getConnection()) {
-            ticketId = insertTicketForTest(conn, draw.getId(), 1);
+            ticketId = insertTicketForTest(conn, draw.id(), 1);
         }
 
-        DrawResult result = new DrawResult();
-        result.setDrawId(draw.getId());
-        result.setWinningTicketId(ticketId);
-        result.setDrawnAt(OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS));
+        DrawResult result = new DrawResult(
+                null,
+                draw.id(),
+                ticketId,
+                OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS)
+        );
 
         // Act
         DrawResult saved = resultRepository.save(result);
 
         // Assert
-        assertThat(saved.getId()).isNotNull();
-        Optional<DrawResult> found = resultRepository.findByDrawId(draw.getId());
+        assertThat(saved.id()).isNotNull();
+        Optional<DrawResult> found = resultRepository.findByDrawId(draw.id());
         assertThat(found).isPresent();
-        assertThat(found.get().getWinningTicketId()).isEqualTo(ticketId);
+        assertThat(found.get().winningTicketId()).isEqualTo(ticketId);
     }
 
     @Test
     @DisplayName("Должен сохранять результат внутри транзакции и откатывать при ошибке")
     void saveInTransactionTest() throws Exception {
         Draw draw = saveCustomDraw("Tx Draw", DrawStatus.ACTIVE);
-        DrawResult result = new DrawResult();
-        result.setDrawId(draw.getId());
-        result.setDrawnAt(OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS));
+        OffsetDateTime drawnAt = OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
 
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
-            Long ticketId = insertTicketForTest(conn, draw.getId(), 777);
-            result.setWinningTicketId(ticketId);
+            Long ticketId = insertTicketForTest(conn, draw.id(), 777);
+            DrawResult result = new DrawResult(null, draw.id(), ticketId, drawnAt);
 
             resultRepository.saveInTransaction(conn, result);
 
             // Проверка изоляции: в другом соединении данных еще нет
-            assertThat(resultRepository.findByDrawId(draw.getId())).isEmpty();
+            assertThat(resultRepository.findByDrawId(draw.id())).isEmpty();
 
             conn.commit();
         }
 
-        assertThat(resultRepository.findByDrawId(draw.getId())).isPresent();
+        assertThat(resultRepository.findByDrawId(draw.id())).isPresent();
     }
 
     /**

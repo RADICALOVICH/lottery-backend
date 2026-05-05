@@ -6,11 +6,9 @@ import com.team.lottery.draws.mapper.DrawMapper;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawResult;
 import com.team.lottery.draws.model.DrawStatus;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,23 +26,17 @@ class DrawMapperTest {
         OffsetDateTime endDate = OffsetDateTime.now().plusDays(7);
         int totalTickets = 500;
 
-        Draw draw = new Draw();
-        draw.setId(id);
-        draw.setTitle(title);
-        draw.setStatus(status);
-        draw.setEndDate(endDate);
-        draw.setTotalTickets(totalTickets);
-
+        Draw draw = new Draw(id, title, status, endDate, totalTickets, null, null);
 
         DrawResponse response = DrawMapper.toResponse(draw);
 
 
         assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(id);
-        assertThat(response.getTitle()).isEqualTo(title);
-        assertThat(response.getStatus()).isEqualTo(status);
-        assertThat(response.getEndDate()).isEqualTo(endDate);
-        assertThat(response.getTotalTickets()).isEqualTo(totalTickets);
+        assertThat(response.id()).isEqualTo(id);
+        assertThat(response.title()).isEqualTo(title);
+        assertThat(response.status()).isEqualTo(status);
+        assertThat(response.endDate()).isEqualTo(endDate);
+        assertThat(response.totalTickets()).isEqualTo(totalTickets);
     }
 
     @Test
@@ -58,18 +50,14 @@ class DrawMapperTest {
         Long winningTicketId = 1L;
         OffsetDateTime drawnAt = OffsetDateTime.now();
 
-        DrawResult result = new DrawResult();
-        result.setDrawId(drawId);
-        result.setWinningTicketId(winningTicketId);
-        result.setDrawnAt(drawnAt);
-
+        DrawResult result = new DrawResult(null, drawId, winningTicketId, drawnAt);
 
         DrawResultResponse response = DrawMapper.toResultResponse(result);
 
 
         assertThat(response).isNotNull();
-        assertThat(response.getDrawId()).isEqualTo(drawId);
-        assertThat(response.getWinningTicketId()).isEqualTo(winningTicketId);
-        assertThat(response.getDrawnAt()).isEqualTo(drawnAt);
+        assertThat(response.drawId()).isEqualTo(drawId);
+        assertThat(response.winningTicketId()).isEqualTo(winningTicketId);
+        assertThat(response.drawnAt()).isEqualTo(drawnAt);
     }
 }

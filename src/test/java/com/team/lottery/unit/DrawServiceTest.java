@@ -1,7 +1,6 @@
 package com.team.lottery.unit;
 
 import com.team.lottery.common.errors.ConflictException;
-import com.team.lottery.common.errors.NotFoundException;
 import com.team.lottery.common.errors.ValidationException;
 import com.team.lottery.draws.dto.CreateDrawRequest;
 import com.team.lottery.draws.model.Draw;
@@ -12,7 +11,6 @@ import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.ticket.model.Ticket;
 import com.team.lottery.ticket.model.TicketStatus;
 import com.team.lottery.ticket.repository.TicketRepository;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -49,14 +47,13 @@ class DrawServiceTest {
         Должен сохранять тираж и создавать указанное количество билетов.
         * */
         Long adminId = 1L;
-        CreateDrawRequest request = new CreateDrawRequest();
-        request.setTitle("New Year Draw");
-        request.setEndDate(OffsetDateTime.now().plusDays(1));
-        request.setTotalTickets(3);
+        CreateDrawRequest request = new CreateDrawRequest(
+                "New Year Draw",
+                OffsetDateTime.now().plusDays(1),
+                3
+        );
 
-        Draw savedDraw = new Draw();
-        savedDraw.setId(10L);
-        savedDraw.setTotalTickets(3);
+        Draw savedDraw = new Draw(10L, null, null, null, 3, null, null);
 
         when(drawRepository.save(any(Draw.class))).thenReturn(savedDraw);
 
@@ -64,7 +61,7 @@ class DrawServiceTest {
         Draw result = drawService.createDraw(request, adminId);
 
 
-        assertThat(result.getId()).isEqualTo(10L);
+        assertThat(result.id()).isEqualTo(10L);
         verify(drawRepository).save(any(Draw.class));
         verify(ticketRepository, times(3)).save(any(Ticket.class));
     }
@@ -74,10 +71,11 @@ class DrawServiceTest {
         /*
         Должен бросать ValidationException, если дата окончания в прошлом.
         * */
-        CreateDrawRequest request = new CreateDrawRequest();
-        request.setTitle("Test draw");
-        request.setTotalTickets(3);
-        request.setEndDate(OffsetDateTime.now().minusDays(1));
+        CreateDrawRequest request = new CreateDrawRequest(
+                "Test draw",
+                OffsetDateTime.now().minusDays(1),
+                3
+        );
 
         assertThatThrownBy(() -> drawService.createDraw(request, 1L))
                 .isInstanceOf(ValidationException.class)
@@ -91,9 +89,7 @@ class DrawServiceTest {
         */
 
         Long drawId = 10L;
-        Draw draw = new Draw();
-        draw.setId(drawId);
-        draw.setStatus(DrawStatus.CLOSED);
+        Draw draw = new Draw(drawId, null, DrawStatus.CLOSED, null, null, null, null);
 
         Ticket soldTicket = new Ticket(1L, drawId, 1L, 1, TicketStatus.SOLD, null);
 
@@ -117,9 +113,7 @@ class DrawServiceTest {
         Должен бросать ConflictException, если статус не CLOSED.
         * */
         Long drawId = 10L;
-        Draw draw = new Draw();
-        draw.setId(drawId);
-        draw.setStatus(DrawStatus.ACTIVE);
+        Draw draw = new Draw(drawId, null, DrawStatus.ACTIVE, null, null, null, null);
 
         when(drawRepository.findById(drawId)).thenReturn(Optional.of(draw));
 
@@ -134,9 +128,7 @@ class DrawServiceTest {
         Должен бросать ConflictException, если нет проданных билетов.
         * */
         Long drawId = 10L;
-        Draw draw = new Draw();
-        draw.setId(drawId);
-        draw.setStatus(DrawStatus.CLOSED);
+        Draw draw = new Draw(drawId, null, DrawStatus.CLOSED, null, null, null, null);
 
         when(drawRepository.findById(drawId)).thenReturn(Optional.of(draw));
         when(ticketRepository.findByDrawId(drawId)).thenReturn(Collections.emptyList());
@@ -153,9 +145,7 @@ class DrawServiceTest {
         * */
 
         Long drawId = 10L;
-        Draw draw = new Draw();
-        draw.setId(drawId);
-        draw.setStatus(DrawStatus.CLOSED);
+        Draw draw = new Draw(drawId, null, DrawStatus.CLOSED, null, null, null, null);
         Ticket ticket = new Ticket(1L, drawId, 1L, 1, TicketStatus.SOLD, null);
 
         when(drawRepository.findById(drawId)).thenReturn(Optional.of(draw));

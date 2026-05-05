@@ -36,12 +36,12 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         Должен создавать пачку билетов и находить их по drawId.
         * */
 
-        ticketRepository.createTickets(testDraw.getId(), 5);
-        List<Ticket> tickets = ticketRepository.findByDrawId(testDraw.getId());
+        ticketRepository.createTickets(testDraw.id(), 5);
+        List<Ticket> tickets = ticketRepository.findByDrawId(testDraw.id());
 
 
         assertThat(tickets).hasSize(5);
-        assertThat(tickets).allMatch(ticket -> ticket.drawId() == testDraw.getId());
+        assertThat(tickets).allMatch(ticket -> ticket.drawId() == testDraw.id());
         assertThat(tickets).allMatch(ticket -> ticket.status() == TicketStatus.AVAILABLE);
         assertThat(tickets).allMatch(ticket -> ticket.ownerId() == null);
 
@@ -55,8 +55,8 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         /*
         * Должен успешно находить билет по его ID.
         * */
-        ticketRepository.createTickets(testDraw.getId(), 1);
-        Ticket createdTicket = ticketRepository.findByDrawId(testDraw.getId()).get(0);
+        ticketRepository.createTickets(testDraw.id(), 1);
+        Ticket createdTicket = ticketRepository.findByDrawId(testDraw.id()).get(0);
 
 
         Optional<Ticket> foundTicket = ticketRepository.findById(createdTicket.id());
@@ -73,8 +73,8 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         * Должен успешно осуществлять покупку билета (buyTicket).
         * */
 
-        ticketRepository.createTickets(testDraw.getId(), 1);
-        Ticket availableTicket = ticketRepository.findByDrawId(testDraw.getId()).get(0);
+        ticketRepository.createTickets(testDraw.id(), 1);
+        Ticket availableTicket = ticketRepository.findByDrawId(testDraw.id()).get(0);
 
 
         boolean isBought;
@@ -95,8 +95,8 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         /*
         * Не должен покупать билет дважды (защита от двойной покупки).
         * */
-        ticketRepository.createTickets(testDraw.getId(), 1);
-        Ticket availableTicket = ticketRepository.findByDrawId(testDraw.getId()).get(0);
+        ticketRepository.createTickets(testDraw.id(), 1);
+        Ticket availableTicket = ticketRepository.findByDrawId(testDraw.id()).get(0);
 
 
         try (Connection conn = dataSource.getConnection()) {
@@ -114,8 +114,8 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         /*
         * Должен находить билеты по ownerId.
         * */
-        ticketRepository.createTickets(testDraw.getId(), 3);
-        List<Ticket> tickets = ticketRepository.findByDrawId(testDraw.getId());
+        ticketRepository.createTickets(testDraw.id(), 3);
+        List<Ticket> tickets = ticketRepository.findByDrawId(testDraw.id());
 
         try (Connection conn = dataSource.getConnection()) {
             ticketRepository.buyTicket(conn, tickets.get(0).id(), testUserId);
@@ -135,13 +135,13 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         /*
         Должен находить и блокировать доступный билет (FOR UPDATE SKIP LOCKED).
         */
-        ticketRepository.createTickets(testDraw.getId(), 2);
+        ticketRepository.createTickets(testDraw.id(), 2);
 
 
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false); // Обязательно для блокировки
 
-            Optional<Ticket> lockedTicket = ticketRepository.findAnyAvailableByDrawIdForUpdate(conn, testDraw.getId());
+            Optional<Ticket> lockedTicket = ticketRepository.findAnyAvailableByDrawIdForUpdate(conn, testDraw.id());
 
 
             assertThat(lockedTicket).isPresent();
@@ -156,8 +156,8 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         /*
         Должен обновлять статус конкретного билета.
         * */
-        ticketRepository.createTickets(testDraw.getId(), 1);
-        Ticket ticket = ticketRepository.findByDrawId(testDraw.getId()).get(0);
+        ticketRepository.createTickets(testDraw.id(), 1);
+        Ticket ticket = ticketRepository.findByDrawId(testDraw.id()).get(0);
 
         // Сначала покупаем билет, чтобы у него появился owner_id и статус стал SOLD.
         // Это удовлетворит констрейнт chk_owner_status.
@@ -187,8 +187,8 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         */
 
         // Создаем 3 билета (статус AVAILABLE, owner_id = null)
-        ticketRepository.createTickets(testDraw.getId(), 3);
-        List<Ticket> tickets = ticketRepository.findByDrawId(testDraw.getId());
+        ticketRepository.createTickets(testDraw.id(), 3);
+        List<Ticket> tickets = ticketRepository.findByDrawId(testDraw.id());
 
         // ВАЖНО: Легализуем билеты.
         // "Покупаем" их, чтобы в БД прописался валидный owner_id и статус стал SOLD.
@@ -205,10 +205,10 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         TicketStatus currentStatus = TicketStatus.SOLD;
         TicketStatus newStatus = TicketStatus.SOLD; // Замените на WINNING/COMPLETED, если есть в enum
 
-        ticketRepository.updateStatusesByDrawIdAndCurrentStatus(testDraw.getId(), currentStatus, newStatus);
+        ticketRepository.updateStatusesByDrawIdAndCurrentStatus(testDraw.id(), currentStatus, newStatus);
 
 
-        List<Ticket> updatedTickets = ticketRepository.findByDrawId(testDraw.getId());
+        List<Ticket> updatedTickets = ticketRepository.findByDrawId(testDraw.id());
         assertThat(updatedTickets).hasSize(3);
         assertThat(updatedTickets).allMatch(ticket -> ticket.status() == newStatus);
         assertThat(updatedTickets).allMatch(ticket -> ticket.ownerId() != null); // Владелец не потерялся

@@ -37,6 +37,7 @@ HANDOFF.md
 PROJECT.md
 refactor.md
 PLAN.md
+TestApi/smoke_full_scenario.http
 
 
 .postman/
