@@ -15,6 +15,7 @@ import com.team.lottery.ticket.repository.TicketRepository;
 import com.team.lottery.ticket.service.TicketService;
 import com.team.lottery.users.controller.AuthController;
 import com.team.lottery.users.controller.UserController;
+import com.team.lottery.users.repository.UserJdbcRepository;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.AuthService;
 import com.team.lottery.users.service.TokenService;
@@ -43,15 +44,15 @@ public final class Application {
 
         HealthController healthController = new HealthController(ds);
 
-        UserRepository userRepository = new UserRepository(ds);
+        UserRepository userRepository = new UserJdbcRepository(ds);
         TokenService tokenService = new TokenService();
         AuthService authService = new AuthService(tokenService, userRepository);
 
         AuthController authController = new AuthController(userRepository, tokenService, authService);
         UserController userController = new UserController(userRepository, tokenService, authService);
 
-        DrawRepository drawRepository = new JdbcDrawRepository(ds);
-        DrawResultRepository drawResultRepository = new JdbcDrawResultRepository(ds);
+        DrawRepository drawRepository = new DrawJdbcRepository(ds);
+        DrawResultRepository drawResultRepository = new DrawResultJdbcRepository(ds);
 
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository, drawRepository);
@@ -112,15 +113,15 @@ public final class Application {
 
         HealthController healthController = new HealthController(ds);
 
-        UserRepository userRepository = new UserRepository(ds);
+        UserRepository userRepository = new UserJdbcRepository(ds);
         TokenService tokenService = new TokenService();
         AuthService authService = new AuthService(tokenService, userRepository);
 
         AuthController authController = new AuthController(userRepository, tokenService, authService);
         UserController userController = new UserController(userRepository, tokenService, authService);
 
-        DrawRepository drawRepository = new JdbcDrawRepository(ds);
-        DrawResultRepository drawResultRepository = new JdbcDrawResultRepository(ds);
+        DrawRepository drawRepository = new DrawJdbcRepository(ds);
+        DrawResultRepository drawResultRepository = new DrawResultJdbcRepository(ds);
 
         TicketRepository ticketRepository = new TicketJdbcRepository(ds);
         TicketService ticketService = new TicketService(ds, ticketRepository, drawRepository);

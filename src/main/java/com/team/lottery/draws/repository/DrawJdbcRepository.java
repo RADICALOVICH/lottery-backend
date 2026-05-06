@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
 
-public class JdbcDrawRepository implements DrawRepository {
+public class DrawJdbcRepository implements DrawRepository {
     private final DataSource ds;
 
-    public JdbcDrawRepository(DataSource ds) {
+    public DrawJdbcRepository(DataSource ds) {
         this.ds = ds;
     }
 

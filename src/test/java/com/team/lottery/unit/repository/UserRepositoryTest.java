@@ -3,6 +3,7 @@ package com.team.lottery.unit.repository;
 
 import com.team.lottery.users.model.UserAuthData;
 import com.team.lottery.users.model.UserResponse;
+import com.team.lottery.users.repository.UserJdbcRepository;
 import com.team.lottery.users.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,7 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
     @BeforeEach
     void setUpUserRepository() {
-        userRepository = new UserRepository(dataSource);
+        userRepository = new UserJdbcRepository(dataSource);
     }
 
     @Test

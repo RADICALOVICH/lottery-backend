@@ -15,7 +15,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-class JdbcDrawRepositoryTest extends BaseJdbcDrawRepositoryTest {
+class DrawJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
     @Test
     @DisplayName("Успешное сохранение и поиск тиража по ID")

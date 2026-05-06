@@ -3,7 +3,7 @@ package com.team.lottery.unit.repository;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawResult;
 import com.team.lottery.draws.model.DrawStatus;
-import com.team.lottery.draws.repository.JdbcDrawResultRepository;
+import com.team.lottery.draws.repository.DrawResultJdbcRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,13 +17,13 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class JdbcDrawResultRepositoryTest extends BaseJdbcDrawRepositoryTest {
+class DrawResultJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
-    private JdbcDrawResultRepository resultRepository;
+    private DrawResultJdbcRepository resultRepository;
 
     @BeforeEach
     void setUpChild() {
-        resultRepository = new JdbcDrawResultRepository(dataSource);
+        resultRepository = new DrawResultJdbcRepository(dataSource);
     }
 
     @Test
