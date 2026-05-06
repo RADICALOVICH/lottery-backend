@@ -15,6 +15,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static io.restassured.RestAssured.given;
 
 import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -197,6 +198,55 @@ public class PostAdminDrawsTest extends BaseTest {
                 .statusCode(400)
                 .contentType(ContentType.JSON)
                 .body("code", equalTo("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void shouldReturn400WhenEndDateInPast() {
+        /*
+        Дата окончания тиража в прошлом
+        Сценарий: Создание тиража с endDate < now()
+        Вход: POST /admin/draws с endDate в прошлом
+        Ожидаемый результат: 400
+        * */
+
+        // 1. Создание админа (используем вспомогательный подход)
+        given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"admin\", \"password\": \"admin123\" }")
+                .post("/auth/register");
+
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set admin role", e);
+        }
+
+        // 2. Логин
+        String token = given().contentType(ContentType.JSON)
+                .body("{ \"login\": \"admin\", \"password\": \"admin123\" }")
+                .post("/auth/login")
+                .then()
+                .extract()
+                .path("token");
+
+        // 3. Создание тиража. Дата - в прошлом.
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body("""
+                        {
+                          "title": "Тираж #1",
+                          "totalTickets": 1000,
+                          "endDate": "2024-04-25T18:00:00Z"
+                        }
+                        """)
+                .when()
+                .post(url)
+                .then()
+                .statusCode(400)
+                .body("code", equalTo("VALIDATION_FAILED"))
+                .body("message", anyOf(
+                        containsString("endDate must not be in the past")
+                ));
     }
 
 }

@@ -4,14 +4,11 @@ package com.team.lottery.unit.repository;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawJdbcRepository;
+import com.team.lottery.support.TestPostgres;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -20,14 +17,7 @@ import java.sql.ResultSet;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 
-@Testcontainers
 public abstract class BaseJdbcDrawRepositoryTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("lottery_test")
-            .withUsername("test_user")
-            .withPassword("test_pass");
 
     protected static DataSource dataSource;
     protected DrawJdbcRepository repository;
@@ -35,17 +25,13 @@ public abstract class BaseJdbcDrawRepositoryTest {
 
     @BeforeAll
     static void setupDataSource() {
+        // Используем общий Testcontainer (TestPostgres). Миграции Flyway уже
+        // прогнаны в TestPostgres static {} init — здесь просто строим пул.
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(postgres.getJdbcUrl());
-        config.setUsername(postgres.getUsername());
-        config.setPassword(postgres.getPassword());
+        config.setJdbcUrl(TestPostgres.INSTANCE.getJdbcUrl());
+        config.setUsername(TestPostgres.INSTANCE.getUsername());
+        config.setPassword(TestPostgres.INSTANCE.getPassword());
         dataSource = new HikariDataSource(config);
-
-        // Запуск миграций Flyway перед всеми тестами
-        Flyway.configure()
-                .dataSource(dataSource)
-                .load()
-                .migrate();
     }
 
     @BeforeEach
