@@ -19,7 +19,7 @@ public class AdminDrawController {
 
     public void registerRoutes(RoutesConfig routes) {
         routes.post("/admin/draws", ctx -> {
-            long adminId = auth.requireAdmin(ctx).getId();
+            long adminId = auth.requireAdmin(ctx).id();
 
             CreateDrawRequest request = ctx.bodyAsClass(CreateDrawRequest.class);
             Draw createdDraw = drawService.createDraw(request, adminId);

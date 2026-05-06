@@ -4,7 +4,6 @@ import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.AuthService;
 import com.team.lottery.users.service.TokenService;
-import io.javalin.http.Context;
 import io.javalin.config.RoutesConfig;
 
 import java.util.Map;
@@ -26,9 +25,9 @@ public class UserController {
             UserResponse currentUser = auth.requireUser(ctx);
 
             ctx.status(200).json(Map.of(
-                    "id", currentUser.getId(),
-                    "login", currentUser.getLogin(),
-                    "role", currentUser.getRole()
+                    "id", currentUser.id(),
+                    "login", currentUser.login(),
+                    "role", currentUser.role()
             ));
         });
 
@@ -42,8 +41,8 @@ public class UserController {
 
             ctx.json(Map.of(
                     "message", "Admin access granted",
-                    "login", currentUser.getLogin(),
-                    "role", currentUser.getRole()
+                    "login", currentUser.login(),
+                    "role", currentUser.role()
             ));
         });
 
