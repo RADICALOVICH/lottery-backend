@@ -5,13 +5,11 @@ import com.team.lottery.users.model.UserAuthData;
 import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
 import java.util.List;
 
-import static com.team.lottery.unit.repository.BaseJdbcDrawRepositoryTest.dataSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
@@ -36,9 +34,9 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
         assertThat(id).isPositive();
         UserAuthData found = userRepository.findByLogin(login).orElse(null);
         assertThat(found).isNotNull();
-        assertThat(found.getLogin()).isEqualTo(login);
-        assertThat(found.getPasswordHash()).isEqualTo(hash);
-        assertThat(found.getRole()).isEqualTo("USER");
+        assertThat(found.login()).isEqualTo(login);
+        assertThat(found.passwordHash()).isEqualTo(hash);
+        assertThat(found.role()).isEqualTo("USER");
     }
 
     @Test
@@ -66,8 +64,8 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
 
         assertThat(data).isNotNull();
-        assertThat(data.getLogin()).isEqualTo(login);
-        assertThat(data.getPasswordHash()).isEqualTo(hash);
+        assertThat(data.login()).isEqualTo(login);
+        assertThat(data.passwordHash()).isEqualTo(hash);
     }
 
     @Test
@@ -80,8 +78,8 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
         UserResponse response = userRepository.findById(id).orElse(null);
 
         assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(id);
-        assertThat(response.getLogin()).isEqualTo("find_me");
+        assertThat(response.id()).isEqualTo(id);
+        assertThat(response.login()).isEqualTo("find_me");
     }
 
     @Test
@@ -101,7 +99,7 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
 
         assertThat(users).hasSize(initialCount + 2);
 
-        assertThat(users).extracting(UserResponse::getLogin)
+        assertThat(users).extracting(UserResponse::login)
                 .contains("user1", "user2");
     }
 
@@ -118,7 +116,7 @@ class UserRepositoryTest extends BaseJdbcDrawRepositoryTest {
         List<UserResponse> found = userRepository.findUsersByIds(List.of(id1, id3));
 
         assertThat(found).hasSize(2);
-        assertThat(found).extracting(UserResponse::getId)
+        assertThat(found).extracting(UserResponse::id)
                 .containsExactlyInAnyOrder(id1, id3);
     }
 

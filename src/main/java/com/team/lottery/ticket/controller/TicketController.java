@@ -22,7 +22,7 @@ public class TicketController {
 
     public void registerRoutes(RoutesConfig routes) {
         routes.post("/draws/{id}/tickets", ctx -> {
-            long userId = auth.requireUser(ctx).getId();
+            long userId = auth.requireUser(ctx).id();
             long drawId = Long.parseLong(ctx.pathParam("id"));
 
             var ticket = ticketService.buyTicket(drawId, userId);
@@ -34,7 +34,7 @@ public class TicketController {
         });
 
         routes.get("/me/tickets", ctx -> {
-            long userId = auth.requireUser(ctx).getId();
+            long userId = auth.requireUser(ctx).id();
 
             List<TicketResponse> response = ticketService.getMyTickets(userId).stream()
                     .map(TicketMapper::toResponse)
@@ -44,7 +44,7 @@ public class TicketController {
         });
 
         routes.get("/me/results", ctx -> {
-            long userId = auth.requireUser(ctx).getId();
+            long userId = auth.requireUser(ctx).id();
 
             List<TicketResponse> response = ticketService.getMyResults(userId).stream()
                     .map(TicketMapper::toResponse)

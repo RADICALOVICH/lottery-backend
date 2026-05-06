@@ -30,7 +30,7 @@ public class AuthService {
 
     public UserResponse requireAdmin(Context ctx) {
         UserResponse user = requireUser(ctx);
-        if (!"ADMIN".equals(user.getRole())) {
+        if (!"ADMIN".equals(user.role())) {
             throw new ForbiddenException("Access denied");
         }
         return user;

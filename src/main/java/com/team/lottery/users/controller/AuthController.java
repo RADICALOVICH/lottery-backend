@@ -30,16 +30,16 @@ public class AuthController {
         routes.post("/auth/register", ctx -> {
             RegisterRequest request = ctx.bodyAsClass(RegisterRequest.class);
 
-            AuthValidators.login(request.getLogin());
-            AuthValidators.password(request.getPassword());
+            AuthValidators.login(request.login());
+            AuthValidators.password(request.password());
 
-            String login = request.getLogin().trim();
+            String login = request.login().trim();
 
             if (userRepository.existsByLogin(login)) {
                 throw new ConflictException("Login already exists");
             }
 
-            String passwordHash = PasswordUtil.hashPassword(request.getPassword());
+            String passwordHash = PasswordUtil.hashPassword(request.password());
             long userId = userRepository.createUser(login, passwordHash);
 
             ctx.status(201).json(Map.of(
@@ -54,10 +54,10 @@ public class AuthController {
             String failureMsg = "Invalid login or password";
             LoginRequest request = ctx.bodyAsClass(LoginRequest.class);
 
-            AuthValidators.login(request.getLogin());
-            AuthValidators.password(request.getPassword());
+            AuthValidators.login(request.login());
+            AuthValidators.password(request.password());
 
-            String login = request.getLogin().trim();
+            String login = request.login().trim();
 
             UserAuthData user = userRepository.findByLogin(login)
                     .orElseThrow(() -> new UnauthorizedException(failureMsg));
@@ -66,35 +66,35 @@ public class AuthController {
             }
 
             boolean passwordMatches = PasswordUtil.matches(
-                    request.getPassword(),
-                    user.getPasswordHash()
+                    request.password(),
+                    user.passwordHash()
             );
 
             if (!passwordMatches) {
                 throw new UnauthorizedException(failureMsg);
             }
 
-            if (tokenService.hasToken(user.getId())) {
-                String existingToken = tokenService.getTokenByUserId(user.getId());
+            if (tokenService.hasToken(user.id())) {
+                String existingToken = tokenService.getTokenByUserId(user.id());
 
                 ctx.status(200).json(Map.of(
                         "message", successMsg,
                         "token", existingToken,
-                        "id", user.getId(),
-                        "login", user.getLogin(),
-                        "role", user.getRole()
+                        "id", user.id(),
+                        "login", user.login(),
+                        "role", user.role()
                 ));
                 return;
             }
 
-            String token = tokenService.generateOrGetToken(user.getId());
+            String token = tokenService.generateOrGetToken(user.id());
 
             ctx.status(200).json(Map.of(
                     "message", successMsg,
                     "token", token,
-                    "id", user.getId(),
-                    "login", user.getLogin(),
-                    "role", user.getRole()
+                    "id", user.id(),
+                    "login", user.login(),
+                    "role", user.role()
             ));
         });
 
