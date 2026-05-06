@@ -3,7 +3,7 @@ package com.team.lottery.unit.repository;
 
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
-import com.team.lottery.draws.repository.JdbcDrawRepository;
+import com.team.lottery.draws.repository.DrawJdbcRepository;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.flywaydb.core.Flyway;
@@ -30,7 +30,7 @@ public abstract class BaseJdbcDrawRepositoryTest {
             .withPassword("test_pass");
 
     protected static DataSource dataSource;
-    protected JdbcDrawRepository repository;
+    protected DrawJdbcRepository repository;
     protected Long testUserId;
 
     @BeforeAll
@@ -50,7 +50,7 @@ public abstract class BaseJdbcDrawRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        repository = new JdbcDrawRepository(dataSource);
+        repository = new DrawJdbcRepository(dataSource);
 
         // Очищаем таблицы перед каждым тестом (CASCADE удалит и draws, и билеты)
         try (Connection conn = dataSource.getConnection()) {
