@@ -16,11 +16,13 @@ import org.testcontainers.containers.PostgreSQLContainer;
  */
 public final class TestPostgres {
 
+    // Имена БД и пользователя совпадают с прод-конфигом, чтобы интеграционные
+    // тесты, ассертящие dbName/dbUser в /health/db ответе, проходили.
     public static final PostgreSQLContainer<?> INSTANCE =
             new PostgreSQLContainer<>("postgres:16-alpine")
-                    .withDatabaseName("lottery_test")
-                    .withUsername("test")
-                    .withPassword("test");
+                    .withDatabaseName("lottery")
+                    .withUsername("lottery")
+                    .withPassword("lottery_dev_password");
 
     static {
         INSTANCE.start();

@@ -87,6 +87,50 @@ public class PostAdminDrawsIdRunDrawTest extends BaseTest {
                 ));
     }
 
+    @Test
+    public void runDrawAsAdmin() {
+        /* Проведение розыгрыша (админ)
+         * Сценарий: Запуск розыгрыша тиража
+         * Вход: POST /admin/draws/1/run-draw с JWT админа
+         * Ожидаемый результат: 200 OK, DrawResponse status=COMPLETED
+         */
+
+        // 1. Создаем админа, создаем тираж
+        given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/register");
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE users SET role = 'ADMIN' WHERE login = 'admin'");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        String adminToken = given().contentType(ContentType.JSON).body("{ \"login\": \"admin\", \"password\": \"admin123\" }").post("/auth/login").then().extract().path("token");
+
+        given().header("Authorization", "Bearer " + adminToken).contentType(ContentType.JSON)
+                .body(String.format("{ \"title\": \"Тираж\", \"totalTickets\": 10, \"endDate\": \"%s\" }", getDateInFuture()))
+                .post("/admin/draws");
+
+        // 2. Покупка билета
+        given().contentType(ContentType.JSON).body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/register");
+        String userToken = given().contentType(ContentType.JSON).body("{ \"login\": \"alice\", \"password\": \"supersecret123\" }").post("/auth/login").then().extract().path("token");
+        given().header("Authorization", "Bearer " + userToken).post("/draws/1/tickets");
+
+        // 3. Ставим статус CLOSED
+        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
+            connection.createStatement().execute("UPDATE draws SET status = 'CLOSED' WHERE id = 1");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        // 4. Выполнение и проверка
+        given()
+                .header("Authorization", "Bearer " + adminToken)
+                .when()
+                .post(getUrl(1))
+                .then()
+                .statusCode(200)
+                .contentType(ContentType.JSON)
+                .body("status", equalTo("COMPLETED"));
+    }
+
 }
 
 
