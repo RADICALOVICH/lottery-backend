@@ -11,11 +11,11 @@ import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
-public class JdbcDrawResultRepository implements DrawResultRepository {
+public class DrawResultJdbcRepository implements DrawResultRepository {
 
     private final DataSource ds;
 
-    public JdbcDrawResultRepository(DataSource ds) {
+    public DrawResultJdbcRepository(DataSource ds) {
         this.ds = ds;
     }
 
