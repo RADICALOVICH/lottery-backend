@@ -1,7 +1,9 @@
 package com.team.lottery.integration;
 
 import com.team.lottery.Application;
+import com.team.lottery.config.AppConfig;
 import com.team.lottery.config.DatabaseConfig;
+import com.team.lottery.support.TestPostgres;
 import io.javalin.Javalin;
 import io.restassured.RestAssured;
 import io.restassured.parsing.Parser;
@@ -11,9 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-
-import static io.restassured.RestAssured.given;
-
 
 public abstract class BaseTest {
 
@@ -32,11 +31,23 @@ public abstract class BaseTest {
     }
 
 
-
     @BeforeAll
     public static void startApp() {
-        // Приложение запускается один раз для всего класса
-        app = Application.start(TEST_PORT);
+        // Собираем AppConfig для тестов: порт + JDBC из изолированного
+        // Testcontainer'а, остальное — дефолты из application.properties.
+        AppConfig defaults = AppConfig.load();
+        AppConfig testCfg = new AppConfig(
+                TEST_PORT,
+                TestPostgres.INSTANCE.getJdbcUrl(),
+                TestPostgres.INSTANCE.getUsername(),
+                TestPostgres.INSTANCE.getPassword(),
+                defaults.dbPoolSize(),
+                defaults.bcryptCost(),
+                defaults.drawSchedulerIntervalSeconds(),
+                defaults.isProd()
+        );
+
+        app = Application.startWith(testCfg);
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = TEST_PORT;
 
@@ -46,7 +57,9 @@ public abstract class BaseTest {
 
     @BeforeEach
     public void cleanDatabase() {
-        // Очищаем базу перед каждым тестом, чтобы обеспечить изоляцию
+        // Очищаем базу перед каждым тестом, чтобы обеспечить изоляцию.
+        // DatabaseConfig.getDataSource() возвращает datasource, привязанный к
+        // изолированному Testcontainer'у (см. TestPostgres + Application.startWith).
         try (var connection = DatabaseConfig.getDataSource().getConnection()) {
             connection.createStatement().execute("TRUNCATE TABLE users, draws, tickets, draw_results RESTART IDENTITY CASCADE");
         } catch (Exception e) {
@@ -61,8 +74,3 @@ public abstract class BaseTest {
         }
     }
 }
-
-
-
-
-
