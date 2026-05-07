@@ -42,7 +42,7 @@ class DrawServiceTest {
     private DrawService drawService;
 
     @Test
-    void createDraw_Success() {
+    void createDraw_Success() throws Exception {
         /*
         Должен сохранять тираж и создавать указанное количество билетов.
         * */

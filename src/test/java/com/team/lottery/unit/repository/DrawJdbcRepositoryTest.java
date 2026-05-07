@@ -30,7 +30,9 @@ class DrawJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
                 null
         );
 
-        Draw saved = repository.save(draw);
+        Draw saved = com.team.lottery.common.db.Tx.execute(dataSource, c -> {
+            return repository.save(c, draw);
+        });
 
         assertThat(saved.id()).isNotNull();
         assertThat(saved.title()).isEqualTo("Jackpot 777");
@@ -85,7 +87,7 @@ class DrawJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
 
-            repository.updateStatusInTransaction(conn, draw.id(), DrawStatus.COMPLETED);
+            repository.updateStatus(conn, draw.id(), DrawStatus.COMPLETED);
 
             // В другом соединении статус все еще старый (изоляция транзакций)
             Draw drawBeforeCommit = repository.findById(draw.id()).orElseThrow();

@@ -1,6 +1,7 @@
 package com.team.lottery.unit.repository;
 
 
+import com.team.lottery.common.db.Tx;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawJdbcRepository;
@@ -74,8 +75,12 @@ public abstract class BaseJdbcDrawRepositoryTest {
                 null
         );
 
-        Draw saved = repository.save(draw);
-        repository.updateStatus(saved.id(), status);
+        Draw saved = Tx.execute(dataSource, c -> {
+            return repository.save(c, draw);
+        });
+        Tx.execute(dataSource, c -> {
+            repository.updateStatus(c, saved.id(), status);
+        });
         return repository.findById(saved.id()).orElseThrow();
     }
 
