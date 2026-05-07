@@ -4,7 +4,6 @@ import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
 import com.team.lottery.draws.scheduler.DrawScheduler;
-import com.team.lottery.draws.service.DrawService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,9 +23,6 @@ class DrawSchedulerTest {
     @Mock
     private DrawRepository drawRepository;
 
-    @Mock
-    private DrawService drawService;
-
     @InjectMocks
     private DrawScheduler drawScheduler;
 
@@ -38,49 +34,38 @@ class DrawSchedulerTest {
     }
 
     @Test
-    void shouldProcessEndedDraws() {
+    void shouldCloseEndedDraws() {
         /*
-        * Должен найти просроченные тиражи, закрыть их и запустить розыгрыш.
-        * */
-
-
-        // Репозиторий возвращает один тираж
+         * Должен найти просроченные тиражи и перевести их в CLOSED.
+         * Розыгрыш (runDraw) шедулер НЕ запускает — это делает админ через API.
+         */
         when(drawRepository.findActiveEndedDraws(any(OffsetDateTime.class)))
                 .thenReturn(List.of(testDraw));
 
-        // Вызываем метод напрямую (в обход планировщика), так как нам важна логика обработки
-        // Мы используем рефлексию или делаем метод package-private для тестов
-        // В данном случае лучше всего тестировать через вызов private метода,
-        // если бы он был защищен, но мы протестируем логику внутри за счет вызова метода напрямую.
         invokeProcessEndedDraws();
 
-        // Assert: проверяем цепочку вызовов
         verify(drawRepository).updateStatus(100L, DrawStatus.CLOSED);
-        verify(drawService).runDraw(100L);
     }
 
     @Test
     void shouldContinueProcessingIfOneDrawFails() {
         /*
-        Должен продолжать работу, если один из тиражей вызвал исключение.
-        */
-
-        // Два тиража, первый вызовет ошибку
+         * Должен продолжать работу, если закрытие одного тиража упало с ошибкой.
+         */
         Draw failedDraw = new Draw(1L, null, null, null, null, null, null);
         Draw successDraw = new Draw(2L, null, null, null, null, null, null);
 
         when(drawRepository.findActiveEndedDraws(any(OffsetDateTime.class)))
                 .thenReturn(List.of(failedDraw, successDraw));
 
-        // Имитируем ошибку на первом тираже
-        doThrow(new RuntimeException("Service Error")).when(drawService).runDraw(1L);
-
+        // Имитируем ошибку при закрытии первого тиража
+        doThrow(new RuntimeException("DB error"))
+                .when(drawRepository).updateStatus(1L, DrawStatus.CLOSED);
 
         invokeProcessEndedDraws();
 
-        // Убеждаемся, что второй тираж все равно был обработан
-        verify(drawService).runDraw(1L);
-        verify(drawService).runDraw(2L);
+        // Убеждаемся, что попытка закрыть была для обоих, и второй прошёл
+        verify(drawRepository).updateStatus(1L, DrawStatus.CLOSED);
         verify(drawRepository).updateStatus(2L, DrawStatus.CLOSED);
     }
 

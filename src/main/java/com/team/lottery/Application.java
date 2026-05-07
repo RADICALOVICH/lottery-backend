@@ -91,7 +91,7 @@ public final class Application {
         DrawController drawController = new DrawController(drawService);
         AdminDrawController adminDrawController = new AdminDrawController(drawService, authService);
 
-        DrawScheduler drawScheduler = new DrawScheduler(drawRepository, drawService);
+        DrawScheduler drawScheduler = new DrawScheduler(drawRepository);
 
         Javalin app = JavalinConfig.create(
                 cfg.isProd(),

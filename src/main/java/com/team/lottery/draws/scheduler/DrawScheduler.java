@@ -3,7 +3,6 @@ package com.team.lottery.draws.scheduler;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
-import com.team.lottery.draws.service.DrawService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,20 +13,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Шедулер закрывает продажу билетов в тиражах, у которых наступила end_date:
+ * переводит ACTIVE → CLOSED. Розыгрыш (CLOSED → COMPLETED) шедулер НЕ
+ * проводит — это явное действие администратора через POST /admin/draws/{id}/run-draw.
+ */
 public class DrawScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(DrawScheduler.class);
 
     private final DrawRepository drawRepository;
-    private final DrawService drawService;
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
-    public DrawScheduler(
-            DrawRepository drawRepository,
-            DrawService drawService
-    ) {
+    public DrawScheduler(DrawRepository drawRepository) {
         this.drawRepository = drawRepository;
-        this.drawService = drawService;
     }
 
     public void start() {
@@ -45,10 +44,9 @@ public class DrawScheduler {
             for (Draw draw : readyDraws) {
                 try {
                     drawRepository.updateStatus(draw.id(), DrawStatus.CLOSED);
-                    drawService.runDraw(draw.id());
-                    log.info("Draw {} was processed by scheduler", draw.id());
+                    log.info("Draw {} auto-closed by scheduler (sales ended)", draw.id());
                 } catch (Exception e) {
-                    log.error("Failed to process draw {} in scheduler", draw.id(), e);
+                    log.error("Failed to close draw {} in scheduler", draw.id(), e);
                 }
             }
         } catch (Exception e) {
