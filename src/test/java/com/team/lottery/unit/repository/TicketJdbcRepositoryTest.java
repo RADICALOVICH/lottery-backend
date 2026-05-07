@@ -171,7 +171,9 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         TicketStatus newStatus = TicketStatus.WIN;
 
 
-        ticketRepository.updateStatus(ticket.id(), newStatus);
+        com.team.lottery.common.db.Tx.execute(dataSource, c -> {
+            ticketRepository.updateStatus(c, ticket.id(), newStatus);
+        });
 
 
         Ticket updatedTicket = ticketRepository.findById(ticket.id()).orElseThrow();
@@ -205,7 +207,9 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         TicketStatus currentStatus = TicketStatus.SOLD;
         TicketStatus newStatus = TicketStatus.SOLD; // Замените на WINNING/COMPLETED, если есть в enum
 
-        ticketRepository.updateStatusesByDrawIdAndCurrentStatus(testDraw.id(), currentStatus, newStatus);
+        com.team.lottery.common.db.Tx.execute(dataSource, c -> {
+            ticketRepository.updateStatusesByDrawIdAndCurrentStatus(c, testDraw.id(), currentStatus, newStatus);
+        });
 
 
         List<Ticket> updatedTickets = ticketRepository.findByDrawId(testDraw.id());

@@ -70,16 +70,6 @@ public class TicketJdbcRepository implements TicketRepository {
     }
 
     @Override
-    public void updateStatus(long ticketId, TicketStatus status) {
-        String sql = "UPDATE tickets SET status = ?::ticket_status WHERE id = ?";
-        try (Connection conn = dataSource.getConnection()) {
-            updateStatus(conn, ticketId, status);
-        } catch (SQLException e) {
-            throw new RuntimeException("Update status error for ID: " + ticketId, e);
-        }
-    }
-
-    @Override
     public void updateStatus(Connection connection, long ticketId, TicketStatus status) {
         String sql = "UPDATE tickets SET status = ?::ticket_status WHERE id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -87,16 +77,7 @@ public class TicketJdbcRepository implements TicketRepository {
             ps.setLong(2, ticketId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Transactional update status error for ID: " + ticketId, e);
-        }
-    }
-
-    @Override
-    public void updateStatusesByDrawIdAndCurrentStatus(long drawId, TicketStatus currentStatus, TicketStatus newStatus) {
-        try (Connection conn = dataSource.getConnection()) {
-            updateStatusesByDrawIdAndCurrentStatus(conn, drawId, currentStatus, newStatus);
-        } catch (SQLException e) {
-            throw new RuntimeException("Batch update error for draw: " + drawId, e);
+            throw new RuntimeException("Update status error for ticket ID: " + ticketId, e);
         }
     }
 
@@ -109,7 +90,7 @@ public class TicketJdbcRepository implements TicketRepository {
             ps.setString(3, currentStatus.name());
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Transactional batch update error for draw: " + drawId, e);
+            throw new RuntimeException("Batch update error for draw: " + drawId, e);
         }
     }
 
@@ -132,12 +113,11 @@ public class TicketJdbcRepository implements TicketRepository {
     }
 
     @Override
-    public Ticket save(Ticket ticket) {
+    public Ticket save(Connection connection, Ticket ticket) {
         String sql = "INSERT INTO tickets (draw_id, owner_id, ticket_number, status, created_at) " +
                 "VALUES (?, ?, ?, ?::ticket_status, ?) " +
                 "RETURNING id, draw_id, owner_id, ticket_number, status, created_at";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1, ticket.drawId());
             if (ticket.ownerId() == null) ps.setNull(2, Types.BIGINT);
             else ps.setLong(2, ticket.ownerId());

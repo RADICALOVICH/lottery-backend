@@ -19,20 +19,21 @@ public interface TicketRepository {
 
     boolean buyTicket(Connection connection, long ticketId, long userId);
 
-    void updateStatus(long ticketId, TicketStatus status);
-
-    void updateStatusesByDrawIdAndCurrentStatus(long drawId, TicketStatus currentStatus, TicketStatus newStatus);
-
+    // Обновить статус билета в рамках транзакции (Connection приходит из Tx.execute)
     void updateStatus(Connection connection, long ticketId, TicketStatus status);
 
-    void  updateStatusesByDrawIdAndCurrentStatus(
+    // Обновить статусы всех билетов тиража с заданным currentStatus → newStatus,
+    // в рамках транзакции (Connection приходит из Tx.execute)
+    void updateStatusesByDrawIdAndCurrentStatus(
             Connection connection,
             long drawId,
             TicketStatus currentStatus,
             TicketStatus newStatus
     );
 
-    Ticket save(Ticket ticket);
+    // Сохранить билет в рамках транзакции (Connection приходит из Tx.execute)
+    Ticket save(Connection connection, Ticket ticket);
 
+    // Batch insert N билетов в одном вызове (используется в тестах как fixture helper)
     void createTickets(long drawId, int totalTickets);
 }

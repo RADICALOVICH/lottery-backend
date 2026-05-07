@@ -1,5 +1,6 @@
 package com.team.lottery.draws.scheduler;
 
+import com.team.lottery.common.db.Tx;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.draws.repository.DrawRepository;
@@ -7,6 +8,7 @@ import com.team.lottery.draws.repository.DrawRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -22,10 +24,12 @@ public class DrawScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(DrawScheduler.class);
 
+    private final DataSource dataSource;
     private final DrawRepository drawRepository;
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
-    public DrawScheduler(DrawRepository drawRepository) {
+    public DrawScheduler(DataSource dataSource, DrawRepository drawRepository) {
+        this.dataSource = dataSource;
         this.drawRepository = drawRepository;
     }
 
@@ -43,7 +47,9 @@ public class DrawScheduler {
 
             for (Draw draw : readyDraws) {
                 try {
-                    drawRepository.updateStatus(draw.id(), DrawStatus.CLOSED);
+                    Tx.execute(dataSource, c -> {
+                        drawRepository.updateStatus(c, draw.id(), DrawStatus.CLOSED);
+                    });
                     log.info("Draw {} auto-closed by scheduler (sales ended)", draw.id());
                 } catch (Exception e) {
                     log.error("Failed to close draw {} in scheduler", draw.id(), e);

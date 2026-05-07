@@ -1,5 +1,6 @@
 package com.team.lottery.ticket.service;
 
+import com.team.lottery.common.db.Tx;
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.NotFoundException;
 import com.team.lottery.draws.model.Draw;
@@ -10,8 +11,6 @@ import com.team.lottery.ticket.model.TicketStatus;
 import com.team.lottery.ticket.repository.TicketRepository;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 
 public class TicketService {
@@ -34,36 +33,23 @@ public class TicketService {
             throw new ConflictException("Tickets can be bought only for ACTIVE draws");
         }
 
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
+        long boughtTicketId = Tx.execute(dataSource, connection -> {
+            Ticket ticket = ticketRepository.findAnyAvailableByDrawIdForUpdate(connection, drawId)
+                    .orElseThrow(() -> new ConflictException("No available tickets for this draw"));
 
-            try {
-                Ticket ticket = ticketRepository.findAnyAvailableByDrawIdForUpdate(connection, drawId)
-                        .orElseThrow(() -> new ConflictException("No available tickets for this draw"));
+            boolean updated = ticketRepository.buyTicket(connection, ticket.id(), userId);
 
-                boolean updated = ticketRepository.buyTicket(connection, ticket.id(), userId);
-
-                if (!updated) {
-                    throw new ConflictException("Ticket was already bought");
-                }
-
-                connection.commit();
-
-                return ticketRepository.findById(ticket.id())
-                        .orElseThrow(() -> new NotFoundException("Bought ticket not found"));
-            } catch (Exception e) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackException) {
-                    e.addSuppressed(rollbackException);
-                }
-                throw e;
-            } finally {
-                connection.setAutoCommit(true);
+            if (!updated) {
+                throw new ConflictException("Ticket was already bought");
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to buy ticket in transaction", e);
-        }
+
+            return ticket.id();
+        });
+
+        // Перечитываем билет после транзакции — нужны актуальные значения
+        // (status стал SOLD, ownerId проставлен) для возврата клиенту.
+        return ticketRepository.findById(boughtTicketId)
+                .orElseThrow(() -> new NotFoundException("Bought ticket not found"));
     }
 
     public List<Ticket> getMyTickets(long userId) {

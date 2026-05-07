@@ -45,7 +45,9 @@ class DrawResultJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         );
 
         // Act
-        DrawResult saved = resultRepository.save(result);
+        DrawResult saved = com.team.lottery.common.db.Tx.execute(dataSource, c -> {
+            return resultRepository.save(c, result);
+        });
 
         // Assert
         assertThat(saved.id()).isNotNull();
@@ -66,7 +68,7 @@ class DrawResultJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
             Long ticketId = insertTicketForTest(conn, draw.id(), 777);
             DrawResult result = new DrawResult(null, draw.id(), ticketId, drawnAt);
 
-            resultRepository.saveInTransaction(conn, result);
+            resultRepository.save(conn, result);
 
             // Проверка изоляции: в другом соединении данных еще нет
             assertThat(resultRepository.findByDrawId(draw.id())).isEmpty();
