@@ -55,15 +55,16 @@ class DrawServiceTest {
 
         Draw savedDraw = new Draw(10L, null, null, null, 3, null, null);
 
-        when(drawRepository.save(any(Draw.class))).thenReturn(savedDraw);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(drawRepository.save(any(Connection.class), any(Draw.class))).thenReturn(savedDraw);
 
 
         Draw result = drawService.createDraw(request, adminId);
 
 
         assertThat(result.id()).isEqualTo(10L);
-        verify(drawRepository).save(any(Draw.class));
-        verify(ticketRepository, times(3)).save(any(Ticket.class));
+        verify(drawRepository).save(any(Connection.class), any(Draw.class));
+        verify(ticketRepository, times(3)).save(any(Connection.class), any(Ticket.class));
     }
 
     @Test
@@ -103,8 +104,8 @@ class DrawServiceTest {
 
         verify(connection).commit();
         verify(ticketRepository).updateStatus(eq(connection), anyLong(), eq(TicketStatus.WIN));
-        verify(drawRepository).updateStatusInTransaction(connection, drawId, DrawStatus.COMPLETED);
-        verify(drawResultRepository).saveInTransaction(eq(connection), any());
+        verify(drawRepository).updateStatus(connection, drawId, DrawStatus.COMPLETED);
+        verify(drawResultRepository).save(eq(connection), any());
     }
 
     @Test
@@ -153,7 +154,7 @@ class DrawServiceTest {
         when(dataSource.getConnection()).thenReturn(connection);
 
         // Имитируем ошибку при сохранении результата
-        doThrow(new RuntimeException("DB Error")).when(drawResultRepository).saveInTransaction(any(), any());
+        doThrow(new RuntimeException("DB Error")).when(drawResultRepository).save(any(), any());
 
 
         assertThatThrownBy(() -> drawService.runDraw(drawId))

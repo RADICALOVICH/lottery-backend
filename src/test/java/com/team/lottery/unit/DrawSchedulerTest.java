@@ -11,14 +11,23 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
 import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DrawSchedulerTest {
+
+    @Mock
+    private DataSource dataSource;
+
+    @Mock
+    private Connection connection;
 
     @Mock
     private DrawRepository drawRepository;
@@ -29,8 +38,9 @@ class DrawSchedulerTest {
     private Draw testDraw;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         testDraw = new Draw(100L, "Scheduled Draw", null, null, null, null, null);
+        when(dataSource.getConnection()).thenReturn(connection);
     }
 
     @Test
@@ -44,7 +54,7 @@ class DrawSchedulerTest {
 
         invokeProcessEndedDraws();
 
-        verify(drawRepository).updateStatus(100L, DrawStatus.CLOSED);
+        verify(drawRepository).updateStatus(eq(connection), eq(100L), eq(DrawStatus.CLOSED));
     }
 
     @Test
@@ -60,13 +70,13 @@ class DrawSchedulerTest {
 
         // Имитируем ошибку при закрытии первого тиража
         doThrow(new RuntimeException("DB error"))
-                .when(drawRepository).updateStatus(1L, DrawStatus.CLOSED);
+                .when(drawRepository).updateStatus(eq(connection), eq(1L), eq(DrawStatus.CLOSED));
 
         invokeProcessEndedDraws();
 
         // Убеждаемся, что попытка закрыть была для обоих, и второй прошёл
-        verify(drawRepository).updateStatus(1L, DrawStatus.CLOSED);
-        verify(drawRepository).updateStatus(2L, DrawStatus.CLOSED);
+        verify(drawRepository).updateStatus(eq(connection), eq(1L), eq(DrawStatus.CLOSED));
+        verify(drawRepository).updateStatus(eq(connection), eq(2L), eq(DrawStatus.CLOSED));
     }
 
     private void invokeProcessEndedDraws() {
