@@ -1,5 +1,6 @@
 package com.team.lottery.draws.service;
 
+import com.team.lottery.common.db.Tx;
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.NotFoundException;
 import com.team.lottery.draws.dto.CreateDrawRequest;
@@ -19,8 +20,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 /**
  * Сервис тиражей.
@@ -135,55 +134,38 @@ public class DrawService {
         int winningIndex = ThreadLocalRandom.current().nextInt(allTickets.size());
         Ticket winningTicket = allTickets.get(winningIndex);
 
-        try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(false);
+        Tx.execute(dataSource, connection -> {
+            ticketRepository.updateStatusesByDrawIdAndCurrentStatus(
+                    connection,
+                    drawId,
+                    TicketStatus.SOLD,
+                    TicketStatus.LOSE
+            );
 
-            try {
-                ticketRepository.updateStatusesByDrawIdAndCurrentStatus(
-                        connection,
-                        drawId,
-                        TicketStatus.SOLD,
-                        TicketStatus.LOSE
-                );
+            ticketRepository.updateStatus(
+                    connection,
+                    winningTicket.id(),
+                    TicketStatus.WIN
+            );
 
-                ticketRepository.updateStatus(
-                        connection,
-                        winningTicket.id(),
-                        TicketStatus.WIN
-                );
+            drawRepository.updateStatusInTransaction(
+                    connection,
+                    drawId,
+                    DrawStatus.COMPLETED
+            );
 
-                drawRepository.updateStatusInTransaction(
-                        connection,
-                        drawId,
-                        DrawStatus.COMPLETED
-                );
+            DrawResult drawResult = new DrawResult(
+                    null,
+                    drawId,
+                    winningTicket.id(),
+                    OffsetDateTime.now()
+            );
 
-                DrawResult drawResult = new DrawResult(
-                        null,
-                        drawId,
-                        winningTicket.id(),
-                        OffsetDateTime.now()
-                );
+            drawResultRepository.saveInTransaction(connection, drawResult);
+        });
 
-                drawResultRepository.saveInTransaction(connection, drawResult);
-
-                connection.commit();
-            } catch (Exception e) {
-                try {
-                    connection.rollback();
-                } catch (SQLException rollbackException) {
-                    e.addSuppressed(rollbackException);
-                }
-                throw e;
-            } finally {
-                connection.setAutoCommit(true);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to run draw in transaction", e);
-        }
-
-        // Неэффективно (второй запрос в БД). Но надежно.
-        // Пренебрегаем эффективностью: розыгрыш проводится нечасто.
+        // Перечитываем тираж после транзакции — нужны актуальные значения статуса
+        // (status стал COMPLETED) для возврата клиенту.
         return drawRepository.findById(drawId)
                 .orElseThrow(() -> new NotFoundException("Draw not found"));
     }
