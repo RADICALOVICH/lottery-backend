@@ -86,24 +86,28 @@ public class DrawService {
                 null
         );
 
-        Draw savedDraw = drawRepository.save(draw);
+        // Атомарность: либо создаётся тираж и все его билеты, либо ничего.
+        // Без Tx.execute риск — тираж создан, но билеты не успели вставиться.
+        return Tx.execute(dataSource, connection -> {
+            Draw savedDraw = drawRepository.save(connection, draw);
 
-        Instant createdAt = Instant.now();
+            Instant createdAt = Instant.now();
 
-        for (int ticketNumber = 1; ticketNumber <= savedDraw.totalTickets(); ticketNumber++) {
-            Ticket ticket = new Ticket(
-                    0L,
-                    savedDraw.id(),
-                    null,
-                    ticketNumber,
-                    TicketStatus.AVAILABLE,
-                    createdAt
-            );
+            for (int ticketNumber = 1; ticketNumber <= savedDraw.totalTickets(); ticketNumber++) {
+                Ticket ticket = new Ticket(
+                        0L,
+                        savedDraw.id(),
+                        null,
+                        ticketNumber,
+                        TicketStatus.AVAILABLE,
+                        createdAt
+                );
 
-            ticketRepository.save(ticket);
-        }
+                ticketRepository.save(connection, ticket);
+            }
 
-        return savedDraw;
+            return savedDraw;
+        });
     }
 
     public Draw runDraw(Long drawId) {
@@ -148,7 +152,7 @@ public class DrawService {
                     TicketStatus.WIN
             );
 
-            drawRepository.updateStatusInTransaction(
+            drawRepository.updateStatus(
                     connection,
                     drawId,
                     DrawStatus.COMPLETED
@@ -161,7 +165,7 @@ public class DrawService {
                     OffsetDateTime.now()
             );
 
-            drawResultRepository.saveInTransaction(connection, drawResult);
+            drawResultRepository.save(connection, drawResult);
         });
 
         // Перечитываем тираж после транзакции — нужны актуальные значения статуса
@@ -191,10 +195,6 @@ public class DrawService {
 
     public Optional<DrawResult> getDrawResultByDrawId(Long drawId) {
         return drawResultRepository.findByDrawId(drawId);
-    }
-
-    public void updateDrawStatus(Long drawId, DrawStatus status) {
-        drawRepository.updateStatus(drawId, status);
     }
 
 }

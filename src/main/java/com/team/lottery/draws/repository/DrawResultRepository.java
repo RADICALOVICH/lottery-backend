@@ -6,9 +6,8 @@ import java.sql.Connection;
 import java.util.Optional;
 
 public interface DrawResultRepository {
-    DrawResult save(DrawResult drawResult);
-
-    DrawResult saveInTransaction(Connection connection, DrawResult drawResult);
+    // Сохранить результат розыгрыша в рамках транзакции (Connection приходит из Tx.execute)
+    DrawResult save(Connection connection, DrawResult drawResult);
 
     Optional<DrawResult> findByDrawId(Long drawId);
 }

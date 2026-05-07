@@ -21,15 +21,14 @@ public class DrawJdbcRepository implements DrawRepository {
     }
 
     @Override
-    public Draw save(Draw draw) {
+    public Draw save(Connection connection, Draw draw) {
         String sql = """
                 INSERT INTO draws (title, end_date, total_tickets, created_by)
                 VALUES (?, ?, ?, ?)
                 RETURNING id, title, status, end_date, total_tickets, created_by, created_at
                 """;
 
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, draw.title());
             statement.setObject(2, draw.endDate());
@@ -47,7 +46,7 @@ public class DrawJdbcRepository implements DrawRepository {
         }
     }
 
-       @Override
+    @Override
     public Optional<Draw> findById(Long id) {
         String sql = """
                 SELECT id, title, status, end_date, total_tickets, created_by, created_at
@@ -149,26 +148,7 @@ public class DrawJdbcRepository implements DrawRepository {
     }
 
     @Override
-    public void updateStatus(Long drawId, DrawStatus status) {
-        String sql = """
-                UPDATE draws
-                SET status = CAST(? AS draw_status)
-                WHERE id = ?
-                """;
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setString(1, status.name());
-            statement.setLong(2, drawId);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Database error while updating draw status", e);
-        }
-    }
-
-    @Override
-    public void updateStatusInTransaction(Connection connection, Long drawId, DrawStatus status) {
+    public void updateStatus(Connection connection, Long drawId, DrawStatus status) {
         String sql = """
                 UPDATE draws
                 SET status = CAST(? AS draw_status)

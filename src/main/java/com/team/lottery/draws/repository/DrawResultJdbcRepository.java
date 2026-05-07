@@ -20,39 +20,7 @@ public class DrawResultJdbcRepository implements DrawResultRepository {
     }
 
     @Override
-    public DrawResult save(DrawResult drawResult) {
-        String sql = """
-                INSERT INTO draw_results (draw_id, winning_ticket_id, drawn_at)
-                VALUES (?, ?, ?)
-                RETURNING id, draw_id, winning_ticket_id, drawn_at
-                """;
-
-        try (Connection connection = ds.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-
-            statement.setLong(1, drawResult.drawId());
-
-            if (drawResult.winningTicketId() != null) {
-                statement.setLong(2, drawResult.winningTicketId());
-            } else {
-                statement.setNull(2, Types.BIGINT);
-            }
-
-            statement.setObject(3, drawResult.drawnAt());
-
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return mapDrawResult(resultSet);
-                }
-                throw new SQLException("Failed to insert draw result");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Database error while saving draw result", e);
-        }
-    }
-
-    @Override
-    public DrawResult saveInTransaction(Connection connection, DrawResult drawResult) {
+    public DrawResult save(Connection connection, DrawResult drawResult) {
         String sql = """
                 INSERT INTO draw_results (draw_id, winning_ticket_id, drawn_at)
                 VALUES (?, ?, ?)

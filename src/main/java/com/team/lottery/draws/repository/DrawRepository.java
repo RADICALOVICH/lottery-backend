@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DrawRepository {
-    // Сохранить новый тираж
-    Draw save(Draw draw);
+    // Сохранить новый тираж в рамках транзакции (Connection приходит из Tx.execute)
+    Draw save(Connection connection, Draw draw);
 
     // Получить тираж по id, если не найден - Optional.empty()
     Optional<Draw> findById(Long id);
@@ -23,9 +23,6 @@ public interface DrawRepository {
 
     List<Draw> findActiveEndedDraws(OffsetDateTime now);
 
-    // Обновить статус тиража
-    void updateStatus(Long drawId, DrawStatus status);
-
-    // Обновить статус тиража в рамках внешней транзакции
-    void updateStatusInTransaction(Connection connection, Long drawId, DrawStatus status);
+    // Обновить статус тиража в рамках транзакции (Connection приходит из Tx.execute)
+    void updateStatus(Connection connection, Long drawId, DrawStatus status);
 }
