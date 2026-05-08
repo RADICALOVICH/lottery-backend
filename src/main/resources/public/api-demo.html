@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Lottery API Demo Stand</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        header {
+            padding: 28px 40px;
+            background: #1f3b73;
+            color: white;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            color: #dbeafe;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .card h2 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+
+        .card p {
+            margin: 0 0 16px;
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .endpoint {
+            display: inline-block;
+            margin-bottom: 14px;
+            padding: 5px 8px;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+        }
+
+        button {
+            width: 100%;
+            padding: 11px 14px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .result {
+            background: #111827;
+            color: #e5e7eb;
+            border-radius: 14px;
+            padding: 20px;
+            min-height: 260px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+            color: #93c5fd;
+            font-size: 14px;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .ok {
+            color: #22c55e;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        .muted {
+            color: #9ca3af;
+        }
+
+        footer {
+            max-width: 1100px;
+            margin: 0 auto 30px;
+            padding: 0 20px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Lottery API Demo Stand</h1>
+    <p>Простая панель для ручной проверки backend API</p>
+</header>
+
+<main>
+    <section class="panel">
+        <div class="card">
+            <h2>API Health</h2>
+            <span class="endpoint">GET /health</span>
+            <p>Проверяет, что backend-приложение запущено и отвечает.</p>
+            <button onclick="sendRequest('GET', '/health')">Проверить API</button>
+        </div>
+
+        <div class="card">
+            <h2>Database Health</h2>
+            <span class="endpoint">GET /health/db</span>
+            <p>Проверяет подключение приложения к PostgreSQL.</p>
+            <button onclick="sendRequest('GET', '/health/db')">Проверить БД</button>
+        </div>
+
+        <div class="card">
+            <h2>Draws</h2>
+            <span class="endpoint">GET /draws</span>
+            <p>Получает список тиражей. Запрос только читает данные.</p>
+            <button onclick="sendRequest('GET', '/draws')">Получить тиражи</button>
+        </div>
+    </section>
+
+    <section class="result">
+        <div class="result-header">
+            <span id="requestInfo">Запрос ещё не выполнялся</span>
+            <span id="statusInfo" class="muted">status: —</span>
+        </div>
+
+        <pre id="output">Нажми одну из кнопок выше, чтобы выполнить запрос к API.</pre>
+    </section>
+</main>
+
+<footer>
+    Открывать через backend: http://localhost:8080/api-demo.html
+</footer>
+
+<script>
+    async function sendRequest(method, endpoint) {
+        const requestInfo = document.getElementById("requestInfo");
+        const statusInfo = document.getElementById("statusInfo");
+        const output = document.getElementById("output");
+
+        requestInfo.textContent = method + " " + endpoint;
+        statusInfo.textContent = "loading...";
+        statusInfo.className = "muted";
+        output.textContent = "Выполняю запрос...";
+
+        try {
+            const response = await fetch(endpoint, {
+                method: method,
+                headers: {
+                    "Accept": "application/json"
+                }
+            });
+
+            const contentType = response.headers.get("content-type");
+            let data;
+
+            if (contentType && contentType.includes("application/json")) {
+                data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } else {
+                data = await response.text();
+                output.textContent = data;
+            }
+
+            statusInfo.textContent = "status: " + response.status;
+
+            if (response.ok) {
+                statusInfo.className = "ok";
+            } else {
+                statusInfo.className = "error";
+            }
+        } catch (error) {
+            statusInfo.textContent = "request failed";
+            statusInfo.className = "error";
+            output.textContent = error.message;
+        }
+    }
+</script>
+
+</body>
+</html>

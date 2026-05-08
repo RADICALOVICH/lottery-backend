@@ -6,6 +6,7 @@ import com.team.lottery.common.errors.ErrorHandler;
 import io.javalin.Javalin;
 import io.javalin.config.RoutesConfig;
 import io.javalin.json.JavalinJackson;
+import io.javalin.http.staticfiles.Location;
 
 import java.util.function.Consumer;
 
@@ -19,6 +20,11 @@ public final class JavalinConfig {
                                  Consumer<RoutesConfig> routesRegister) {
         return Javalin.create(config -> {
             config.jetty.port = port;
+            config.staticFiles.add(staticFiles -> {
+                staticFiles.hostedPath = "/";
+                staticFiles.directory = "/public";
+                staticFiles.location = Location.CLASSPATH;
+            });
 
             // Необходимо для корректной работы Swagger.
             // Настройка CORS для сред разработки и тестирования.
