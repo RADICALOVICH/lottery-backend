@@ -17,6 +17,8 @@
         <div><b>Admin token:</b> <code id="adminTokenView">не получен</code></div>
         <div><b>User token:</b> <code id="userTokenView">не получен</code></div>
         <div><b>Последний drawId:</b> <code id="drawIdView">не выбран</code></div>
+        <div><b>Старый admin token после logout:</b> <code id="oldAdminTokenView">не сохранён</code></div>
+        <div><b>Старый user token после logout:</b> <code id="oldUserTokenView">не сохранён</code></div>
     </div>
 
     <section id="resultPanel" class="result">
@@ -129,7 +131,7 @@
         <div class="card">
             <h3>Запустить розыгрыш</h3>
             <span class="endpoint">POST /admin/draws/{id}/run-draw</span>
-            <p>Запускает розыгрыш по выбранному drawId.</p>
+            <p>Запускает розыгрыш по выбранному drawId. Тираж должен быть CLOSED и иметь проданные билеты.</p>
 
             <label for="runDrawId">Draw ID</label>
             <input id="runDrawId" placeholder="Например: 1">
@@ -206,194 +208,64 @@
             </button>
         </div>
     </section>
+
+    <h2 class="section-title">6. Проверка авторизации и ошибок</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Выйти как пользователь</h3>
+            <span class="endpoint">POST /auth/logout</span>
+            <p>Завершает пользовательскую сессию и сохраняет старый user token для проверки.</p>
+            <button class="danger" onclick="logoutUser()">Выйти как юзер</button>
+        </div>
+
+        <div class="card">
+            <h3>Проверить старый user token</h3>
+            <span class="endpoint">GET /users/me</span>
+            <p>После logout старый user token должен вернуть 401 Unauthorized.</p>
+            <button class="secondary" onclick="checkOldUserToken()">Проверить старый user token</button>
+        </div>
+
+        <div class="card">
+            <h3>Выйти как админ</h3>
+            <span class="endpoint">POST /auth/logout</span>
+            <p>Завершает admin-сессию и сохраняет старый admin token для проверки.</p>
+            <button class="danger" onclick="logoutAdmin()">Выйти как админ</button>
+        </div>
+
+        <div class="card">
+            <h3>Проверить старый admin token</h3>
+            <span class="endpoint">GET /admin/ping</span>
+            <p>После logout старый admin token должен вернуть 401 Unauthorized.</p>
+            <button class="secondary" onclick="checkOldAdminToken()">Проверить старый admin token</button>
+        </div>
+
+        <div class="card">
+            <h3>User token в admin endpoint</h3>
+            <span class="endpoint">GET /admin/ping</span>
+            <p>Проверяет, что обычный пользователь не может пройти в admin-ручку.</p>
+            <button class="secondary" onclick="sendRequest('GET', '/admin/ping', null, userToken)">
+                Проверить admin с user token
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>Покупка билета без токена</h3>
+            <span class="endpoint">POST /draws/{id}/tickets</span>
+            <p>Проверяет, что купить билет без Authorization нельзя.</p>
+
+            <label for="buyWithoutTokenDrawId">Draw ID</label>
+            <input id="buyWithoutTokenDrawId" placeholder="Например: 1">
+
+            <button class="secondary" onclick="buyTicketWithoutToken()">Купить без токена</button>
+        </div>
+    </section>
 </main>
 
 <footer>
     Открывать через backend: http://localhost:8080/api-demo.html
 </footer>
 
-<script>
-    let adminToken = "";
-    let userToken = "";
-    let lastDrawId = "";
-
-    function updateStateView() {
-        document.getElementById("adminTokenView").textContent = adminToken || "не получен";
-        document.getElementById("userTokenView").textContent = userToken || "не получен";
-        document.getElementById("drawIdView").textContent = lastDrawId || "не выбран";
-
-        if (lastDrawId) {
-            document.getElementById("runDrawId").value = lastDrawId;
-            document.getElementById("buyTicketDrawId").value = lastDrawId;
-            document.getElementById("resultDrawId").value = lastDrawId;
-        }
-    }
-
-    function scrollToResult() {
-        document.getElementById("resultPanel").scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
-    }
-
-    async function sendRequest(method, endpoint, body = null, token = "") {
-        scrollToResult();
-
-        const requestInfo = document.getElementById("requestInfo");
-        const statusInfo = document.getElementById("statusInfo");
-        const output = document.getElementById("output");
-
-        requestInfo.textContent = method + " " + endpoint;
-        statusInfo.textContent = "loading...";
-        statusInfo.className = "muted";
-        output.textContent = "Выполняю запрос...";
-
-        const headers = {
-            "Accept": "application/json"
-        };
-
-        if (body !== null) {
-            headers["Content-Type"] = "application/json";
-        }
-
-        if (token) {
-            headers["Authorization"] = "Bearer " + token;
-        }
-
-        try {
-            const response = await fetch(endpoint, {
-                method: method,
-                headers: headers,
-                body: body === null ? null : JSON.stringify(body)
-            });
-
-            const contentType = response.headers.get("content-type");
-            let data;
-
-            if (contentType && contentType.includes("application/json")) {
-                data = await response.json();
-                output.textContent = JSON.stringify(data, null, 2);
-            } else {
-                data = await response.text();
-                output.textContent = data;
-            }
-
-            statusInfo.textContent = "status: " + response.status;
-            statusInfo.className = response.ok ? "ok" : "error";
-
-            return {
-                ok: response.ok,
-                status: response.status,
-                data: data
-            };
-        } catch (error) {
-            statusInfo.textContent = "request failed";
-            statusInfo.className = "error";
-            output.textContent = error.message;
-
-            return {
-                ok: false,
-                status: 0,
-                data: null
-            };
-        }
-    }
-
-    function extractToken(data) {
-        if (!data) {
-            return "";
-        }
-
-        if (data.token) {
-            return data.token;
-        }
-
-        if (data.accessToken) {
-            return data.accessToken;
-        }
-
-        if (data.jwt) {
-            return data.jwt;
-        }
-
-        return "";
-    }
-
-    async function loginAdmin() {
-        const body = {
-            login: document.getElementById("adminLogin").value,
-            password: document.getElementById("adminPassword").value
-        };
-
-        const result = await sendRequest("POST", "/auth/login", body);
-        const token = extractToken(result.data);
-
-        if (result.ok && token) {
-            adminToken = token;
-            updateStateView();
-        }
-    }
-
-    async function registerUser() {
-        const login = document.getElementById("userRegisterLogin").value;
-        const password = document.getElementById("userRegisterPassword").value;
-
-        document.getElementById("userLogin").value = login;
-        document.getElementById("userPassword").value = password;
-
-        await sendRequest("POST", "/auth/register", {
-            login: login,
-            password: password
-        });
-    }
-
-    async function loginUser() {
-        const body = {
-            login: document.getElementById("userLogin").value,
-            password: document.getElementById("userPassword").value
-        };
-
-        const result = await sendRequest("POST", "/auth/login", body);
-        const token = extractToken(result.data);
-
-        if (result.ok && token) {
-            userToken = token;
-            updateStateView();
-        }
-    }
-
-    async function createDraw() {
-        const body = {
-            title: document.getElementById("drawTitle").value,
-            endDate: document.getElementById("drawEndDate").value,
-            totalTickets: Number(document.getElementById("drawTotalTickets").value)
-        };
-
-        const result = await sendRequest("POST", "/admin/draws", body, adminToken);
-
-        if (result.ok && result.data && result.data.id) {
-            lastDrawId = result.data.id;
-            updateStateView();
-        }
-    }
-
-    async function buyTicket() {
-        const drawId = document.getElementById("buyTicketDrawId").value;
-        await sendRequest("POST", "/draws/" + drawId + "/tickets", null, userToken);
-    }
-
-    async function runDraw() {
-        const drawId = document.getElementById("runDrawId").value;
-        await sendRequest("POST", "/admin/draws/" + drawId + "/run-draw", null, adminToken);
-    }
-
-    async function getDrawResult() {
-        const drawId = document.getElementById("resultDrawId").value;
-        await sendRequest("GET", "/draws/" + drawId + "/result");
-    }
-
-    updateStateView();
-</script>
-
+<script src="/js/api-demo.js"></script>
 </body>
 </html>
