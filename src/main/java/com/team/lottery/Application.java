@@ -9,6 +9,9 @@ import com.team.lottery.draws.repository.*;
 import com.team.lottery.draws.repository.DrawResultRepository;
 import com.team.lottery.draws.scheduler.DrawScheduler;
 import com.team.lottery.draws.service.DrawService;
+import com.team.lottery.reports.controller.ReportController;
+import com.team.lottery.reports.repository.ReportJdbcRepository;
+import com.team.lottery.reports.repository.ReportRepository;
 import com.team.lottery.ticket.controller.TicketController;
 import com.team.lottery.ticket.repository.TicketJdbcRepository;
 import com.team.lottery.ticket.repository.TicketRepository;
@@ -91,6 +94,9 @@ public final class Application {
         DrawController drawController = new DrawController(drawService);
         AdminDrawController adminDrawController = new AdminDrawController(drawService, authService);
 
+        ReportRepository reportRepository = new ReportJdbcRepository(ds);
+        ReportController reportController = new ReportController(reportRepository, authService);
+
         DrawScheduler drawScheduler = new DrawScheduler(ds, drawRepository);
 
         Javalin app = JavalinConfig.create(
@@ -104,6 +110,7 @@ public final class Application {
                     drawController.registerRoutes(routes);
                     adminDrawController.registerRoutes(routes);
                     ticketController.registerRoutes(routes);
+                    reportController.registerRoutes(routes);
                 }
         );
 
