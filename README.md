@@ -18,6 +18,11 @@
 - Получение результата тиража (`GET /draws/{id}/result`) и статусов билетов
   (`WIN` / `LOSE`) в `GET /me/results`.
 
+**Бонусная функциональность:**
+
+- Отчёт по завершённым тиражам — `GET /admin/reports/draws/completed`,
+  выгрузка JSON или CSV (`?format=json|csv`).
+
 ---
 
 ## Стек
@@ -28,7 +33,7 @@
 - **PostgreSQL 16** + native ENUM-типы (`user_role`, `draw_status`, `ticket_status`)
 - **HikariCP 5.1** — пул соединений
 - **Flyway 10** — миграции, накатываются из кода при старте
-- **Jackson 2.17** — JSON
+- **Jackson 2.21** — JSON и CSV (для отчётов)
 - **JBCrypt 0.4** — хеширование паролей
 - **JDBC-only**, без ORM. Все запросы — `PreparedStatement` руками.
 - Тесты: JUnit 5, AssertJ, Mockito, **Testcontainers**, REST Assured
@@ -217,6 +222,7 @@ AVAILABLE — тогда он переходит в WIN с `owner_id = null`. З
 |---|---|---|
 | `POST` | `/admin/draws` | создать тираж |
 | `POST` | `/admin/draws/{id}/run-draw` | провести розыгрыш (только для CLOSED) |
+| `GET` | `/admin/reports/draws/completed` | отчёт по завершённым тиражам (`?format=json\|csv`, дефолт `json`) |
 | `GET` | `/users` | список всех пользователей |
 | `GET` | `/admin/ping` | проверка прав админа |
 | `GET` | `/admin/logged-in-users` | активные сессии |
@@ -284,6 +290,23 @@ curl http://localhost:8080/draws/1/result
 curl http://localhost:8080/me/results -H 'Authorization: Bearer <USER_TOKEN>'
 # [{"id":1,"status":"LOSE",...}, ...]
 ```
+
+### 8. Отчёт по завершённым тиражам (admin, JSON или CSV)
+```bash
+# JSON (дефолт): массив записей по всем COMPLETED-тиражам
+curl http://localhost:8080/admin/reports/draws/completed \
+     -H 'Authorization: Bearer <ADMIN_TOKEN>'
+# 200 OK
+# [{"drawId":1,"title":"Holiday Draw","totalTickets":100,"soldTickets":74,
+#   "winnerTicketNumber":42,"winnerUserId":2,"winnerLogin":"alice",
+#   "drawnAt":"...","createdByAdminId":1,"createdByAdminLogin":"admin", ...}]
+
+# CSV: качаем как файл (имя — completed-draws-YYYYMMDD-HHmm.csv)
+curl -OJ http://localhost:8080/admin/reports/draws/completed?format=csv \
+     -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+Поля `winnerUserId` / `winnerLogin` могут быть `null`, если победил
+непроданный билет (правило лотереи допускает).
 
 В `TestApi/` лежат `.http` файлы для прогона из IntelliJ.
 

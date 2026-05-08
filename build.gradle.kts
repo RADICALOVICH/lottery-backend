@@ -42,6 +42,7 @@ dependencies {
     implementation("org.flywaydb:flyway-core:12.4.0")
     implementation("org.flywaydb:flyway-database-postgresql:12.4.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv")
 
     // Unit‑тесты
     testImplementation("org.assertj:assertj-core:3.27.7")
