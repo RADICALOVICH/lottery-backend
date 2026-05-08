@@ -3,175 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <title>Lottery API Demo Stand</title>
-
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f7fb;
-            color: #1f2937;
-        }
-
-        header {
-            padding: 28px 40px;
-            background: #1f3b73;
-            color: white;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-
-        header p {
-            margin: 8px 0 0;
-            color: #dbeafe;
-        }
-
-        main {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .panel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 14px;
-            padding: 18px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-            border: 1px solid #e5e7eb;
-        }
-
-        .card h2 {
-            margin: 0 0 10px;
-            font-size: 18px;
-        }
-
-        .card p {
-            margin: 0 0 16px;
-            color: #6b7280;
-            font-size: 14px;
-            line-height: 1.4;
-        }
-
-        .endpoint {
-            display: inline-block;
-            margin-bottom: 14px;
-            padding: 5px 8px;
-            border-radius: 8px;
-            background: #eff6ff;
-            color: #1d4ed8;
-            font-family: Consolas, monospace;
-            font-size: 13px;
-        }
-
-        button {
-            width: 100%;
-            padding: 11px 14px;
-            border: none;
-            border-radius: 10px;
-            background: #2563eb;
-            color: white;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        .result {
-            background: #111827;
-            color: #e5e7eb;
-            border-radius: 14px;
-            padding: 20px;
-            min-height: 260px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
-        }
-
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 14px;
-            color: #93c5fd;
-            font-size: 14px;
-        }
-
-        pre {
-            margin: 0;
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .ok {
-            color: #22c55e;
-        }
-
-        .error {
-            color: #f87171;
-        }
-
-        .muted {
-            color: #9ca3af;
-        }
-
-        footer {
-            max-width: 1100px;
-            margin: 0 auto 30px;
-            padding: 0 20px;
-            color: #6b7280;
-            font-size: 13px;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/api-demo.css">
 </head>
 <body>
 
 <header>
     <h1>Lottery API Demo Stand</h1>
-    <p>Простая панель для ручной проверки backend API</p>
+    <p>Панель для ручной демонстрации основных API-сценариев</p>
 </header>
 
 <main>
+    <div class="token-box">
+        <div><b>Admin token:</b> <code id="adminTokenView">не получен</code></div>
+        <div><b>User token:</b> <code id="userTokenView">не получен</code></div>
+        <div><b>Последний drawId:</b> <code id="drawIdView">не выбран</code></div>
+    </div>
+
+    <section id="resultPanel" class="result">
+        <div class="result-header">
+            <span id="requestInfo">Запрос ещё не выполнялся</span>
+            <span id="statusInfo" class="muted">status: —</span>
+        </div>
+
+        <pre id="output">Нажми одну из кнопок ниже, чтобы выполнить запрос к API.</pre>
+    </section>
+
+    <h2 class="section-title">1. Базовые проверки</h2>
+
     <section class="panel">
         <div class="card">
-            <h2>API Health</h2>
+            <h3>API Health</h3>
             <span class="endpoint">GET /health</span>
             <p>Проверяет, что backend-приложение запущено и отвечает.</p>
             <button onclick="sendRequest('GET', '/health')">Проверить API</button>
         </div>
 
         <div class="card">
-            <h2>Database Health</h2>
+            <h3>Database Health</h3>
             <span class="endpoint">GET /health/db</span>
             <p>Проверяет подключение приложения к PostgreSQL.</p>
             <button onclick="sendRequest('GET', '/health/db')">Проверить БД</button>
         </div>
 
         <div class="card">
-            <h2>Draws</h2>
+            <h3>Draws</h3>
             <span class="endpoint">GET /draws</span>
             <p>Получает список тиражей. Запрос только читает данные.</p>
             <button onclick="sendRequest('GET', '/draws')">Получить тиражи</button>
         </div>
     </section>
 
-    <section class="result">
-        <div class="result-header">
-            <span id="requestInfo">Запрос ещё не выполнялся</span>
-            <span id="statusInfo" class="muted">status: —</span>
+    <h2 class="section-title">2. Авторизация</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Вход админа</h3>
+            <span class="endpoint">POST /auth/login</span>
+            <p>Использует seed-админа из миграции: admin / admin123.</p>
+
+            <label for="adminLogin">Логин</label>
+            <input id="adminLogin" value="admin">
+
+            <label for="adminPassword">Пароль</label>
+            <input id="adminPassword" type="password" value="admin123">
+
+            <button onclick="loginAdmin()">Войти как админ</button>
         </div>
 
-        <pre id="output">Нажми одну из кнопок выше, чтобы выполнить запрос к API.</pre>
+        <div class="card">
+            <h3>Регистрация пользователя</h3>
+            <span class="endpoint">POST /auth/register</span>
+            <p>Создаёт обычного пользователя для покупки билетов. Пароль должен быть не короче 8 символов.</p>
+
+            <label for="userRegisterLogin">Логин</label>
+            <input id="userRegisterLogin" value="demo_user">
+
+            <label for="userRegisterPassword">Пароль</label>
+            <input id="userRegisterPassword" type="password" value="demo1234">
+
+            <button onclick="registerUser()">Зарегистрировать юзера</button>
+        </div>
+
+        <div class="card">
+            <h3>Вход пользователя</h3>
+            <span class="endpoint">POST /auth/login</span>
+            <p>Получает user JWT-токен и сохраняет его на странице.</p>
+
+            <label for="userLogin">Логин</label>
+            <input id="userLogin" value="demo_user">
+
+            <label for="userPassword">Пароль</label>
+            <input id="userPassword" type="password" value="demo1234">
+
+            <button onclick="loginUser()">Войти как юзер</button>
+        </div>
+    </section>
+
+    <h2 class="section-title">3. Admin-сценарии</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Проверить admin-доступ</h3>
+            <span class="endpoint">GET /admin/ping</span>
+            <p>Проверяет, что admin token подходит для защищённых ручек.</p>
+            <button onclick="sendRequest('GET', '/admin/ping', null, adminToken)">Проверить админа</button>
+        </div>
+
+        <div class="card">
+            <h3>Создать тираж</h3>
+            <span class="endpoint">POST /admin/draws</span>
+            <p>Создаёт новый тираж и сохраняет его id для следующих шагов.</p>
+
+            <label for="drawTitle">Название</label>
+            <input id="drawTitle" value="Demo draw">
+
+            <label for="drawEndDate">Дата окончания</label>
+            <input id="drawEndDate" value="2026-05-10T12:00:00+03:00">
+
+            <label for="drawTotalTickets">Количество билетов</label>
+            <input id="drawTotalTickets" type="number" value="10">
+
+            <button onclick="createDraw()">Создать тираж</button>
+        </div>
+
+        <div class="card">
+            <h3>Запустить розыгрыш</h3>
+            <span class="endpoint">POST /admin/draws/{id}/run-draw</span>
+            <p>Запускает розыгрыш по выбранному drawId.</p>
+
+            <label for="runDrawId">Draw ID</label>
+            <input id="runDrawId" placeholder="Например: 1">
+
+            <button onclick="runDraw()">Запустить розыгрыш</button>
+        </div>
+    </section>
+
+    <h2 class="section-title">4. User-сценарии</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Мой профиль</h3>
+            <span class="endpoint">GET /users/me</span>
+            <p>Проверяет user token и показывает текущего пользователя.</p>
+            <button onclick="sendRequest('GET', '/users/me', null, userToken)">Показать меня</button>
+        </div>
+
+        <div class="card">
+            <h3>Купить билет</h3>
+            <span class="endpoint">POST /draws/{id}/tickets</span>
+            <p>Покупает билет в выбранном тираже от имени пользователя.</p>
+
+            <label for="buyTicketDrawId">Draw ID</label>
+            <input id="buyTicketDrawId" placeholder="Например: 1">
+
+            <button onclick="buyTicket()">Купить билет</button>
+        </div>
+
+        <div class="card">
+            <h3>Мои билеты</h3>
+            <span class="endpoint">GET /me/tickets</span>
+            <p>Показывает билеты текущего пользователя.</p>
+            <button onclick="sendRequest('GET', '/me/tickets', null, userToken)">Показать мои билеты</button>
+        </div>
+
+        <div class="card">
+            <h3>Мои результаты</h3>
+            <span class="endpoint">GET /me/results</span>
+            <p>Показывает выигрышные/результирующие билеты пользователя.</p>
+            <button onclick="sendRequest('GET', '/me/results', null, userToken)">Показать мои результаты</button>
+        </div>
+    </section>
+
+    <h2 class="section-title">5. Результаты и отчёты</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Результат тиража</h3>
+            <span class="endpoint">GET /draws/{id}/result</span>
+            <p>Показывает результат конкретного тиража.</p>
+
+            <label for="resultDrawId">Draw ID</label>
+            <input id="resultDrawId" placeholder="Например: 1">
+
+            <button onclick="getDrawResult()">Показать результат</button>
+        </div>
+
+        <div class="card">
+            <h3>Отчёт по завершённым тиражам</h3>
+            <span class="endpoint">GET /admin/reports/draws/completed</span>
+            <p>Admin-запрос. Возвращает JSON-отчёт по завершённым тиражам.</p>
+            <button onclick="sendRequest('GET', '/admin/reports/draws/completed', null, adminToken)">
+                Получить отчёт
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>Вошедшие пользователи</h3>
+            <span class="endpoint">GET /admin/logged-in-users</span>
+            <p>Показывает пользователей, у которых сейчас есть токены в памяти приложения.</p>
+            <button onclick="sendRequest('GET', '/admin/logged-in-users', null, adminToken)">
+                Показать logged-in users
+            </button>
+        </div>
     </section>
 </main>
 
@@ -180,7 +213,32 @@
 </footer>
 
 <script>
-    async function sendRequest(method, endpoint) {
+    let adminToken = "";
+    let userToken = "";
+    let lastDrawId = "";
+
+    function updateStateView() {
+        document.getElementById("adminTokenView").textContent = adminToken || "не получен";
+        document.getElementById("userTokenView").textContent = userToken || "не получен";
+        document.getElementById("drawIdView").textContent = lastDrawId || "не выбран";
+
+        if (lastDrawId) {
+            document.getElementById("runDrawId").value = lastDrawId;
+            document.getElementById("buyTicketDrawId").value = lastDrawId;
+            document.getElementById("resultDrawId").value = lastDrawId;
+        }
+    }
+
+    function scrollToResult() {
+        document.getElementById("resultPanel").scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+    async function sendRequest(method, endpoint, body = null, token = "") {
+        scrollToResult();
+
         const requestInfo = document.getElementById("requestInfo");
         const statusInfo = document.getElementById("statusInfo");
         const output = document.getElementById("output");
@@ -190,12 +248,23 @@
         statusInfo.className = "muted";
         output.textContent = "Выполняю запрос...";
 
+        const headers = {
+            "Accept": "application/json"
+        };
+
+        if (body !== null) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        if (token) {
+            headers["Authorization"] = "Bearer " + token;
+        }
+
         try {
             const response = await fetch(endpoint, {
                 method: method,
-                headers: {
-                    "Accept": "application/json"
-                }
+                headers: headers,
+                body: body === null ? null : JSON.stringify(body)
             });
 
             const contentType = response.headers.get("content-type");
@@ -210,18 +279,120 @@
             }
 
             statusInfo.textContent = "status: " + response.status;
+            statusInfo.className = response.ok ? "ok" : "error";
 
-            if (response.ok) {
-                statusInfo.className = "ok";
-            } else {
-                statusInfo.className = "error";
-            }
+            return {
+                ok: response.ok,
+                status: response.status,
+                data: data
+            };
         } catch (error) {
             statusInfo.textContent = "request failed";
             statusInfo.className = "error";
             output.textContent = error.message;
+
+            return {
+                ok: false,
+                status: 0,
+                data: null
+            };
         }
     }
+
+    function extractToken(data) {
+        if (!data) {
+            return "";
+        }
+
+        if (data.token) {
+            return data.token;
+        }
+
+        if (data.accessToken) {
+            return data.accessToken;
+        }
+
+        if (data.jwt) {
+            return data.jwt;
+        }
+
+        return "";
+    }
+
+    async function loginAdmin() {
+        const body = {
+            login: document.getElementById("adminLogin").value,
+            password: document.getElementById("adminPassword").value
+        };
+
+        const result = await sendRequest("POST", "/auth/login", body);
+        const token = extractToken(result.data);
+
+        if (result.ok && token) {
+            adminToken = token;
+            updateStateView();
+        }
+    }
+
+    async function registerUser() {
+        const login = document.getElementById("userRegisterLogin").value;
+        const password = document.getElementById("userRegisterPassword").value;
+
+        document.getElementById("userLogin").value = login;
+        document.getElementById("userPassword").value = password;
+
+        await sendRequest("POST", "/auth/register", {
+            login: login,
+            password: password
+        });
+    }
+
+    async function loginUser() {
+        const body = {
+            login: document.getElementById("userLogin").value,
+            password: document.getElementById("userPassword").value
+        };
+
+        const result = await sendRequest("POST", "/auth/login", body);
+        const token = extractToken(result.data);
+
+        if (result.ok && token) {
+            userToken = token;
+            updateStateView();
+        }
+    }
+
+    async function createDraw() {
+        const body = {
+            title: document.getElementById("drawTitle").value,
+            endDate: document.getElementById("drawEndDate").value,
+            totalTickets: Number(document.getElementById("drawTotalTickets").value)
+        };
+
+        const result = await sendRequest("POST", "/admin/draws", body, adminToken);
+
+        if (result.ok && result.data && result.data.id) {
+            lastDrawId = result.data.id;
+            updateStateView();
+        }
+    }
+
+    async function buyTicket() {
+        const drawId = document.getElementById("buyTicketDrawId").value;
+        await sendRequest("POST", "/draws/" + drawId + "/tickets", null, userToken);
+    }
+
+    async function runDraw() {
+        const drawId = document.getElementById("runDrawId").value;
+        await sendRequest("POST", "/admin/draws/" + drawId + "/run-draw", null, adminToken);
+    }
+
+    async function getDrawResult() {
+        const drawId = document.getElementById("resultDrawId").value;
+        await sendRequest("GET", "/draws/" + drawId + "/result");
+    }
+
+    updateStateView();
 </script>
 
 </body>
