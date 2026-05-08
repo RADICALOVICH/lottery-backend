@@ -21,6 +21,8 @@ tags:
     description: Админские операции (требуют JWT ADMIN)
   - name: User
     description: Пользовательские операции (требуют JWT USER)
+  - name: Reports
+    description: Отчёты для админа (выгрузка JSON / CSV)
 
 paths:
 
@@ -381,6 +383,59 @@ paths:
                 $ref: "#/components/schemas/ErrorResponseBody"
         "409":
           description: Попытка провести тираж без проданных билетов.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+
+# ReportController.java ← HTTP-ручка GET /admin/reports/draws/completed (требует ADMIN JWT)
+  /admin/reports/draws/completed:
+    get:
+      tags:
+        - Admin
+        - Reports
+      summary: Отчёт по завершённым тиражам (admin, JSON или CSV)
+      description: "Возвращает список всех тиражей в статусе COMPLETED со сводной статистикой (всего билетов, продано билетов, победитель). Сортировка по drawnAt (новые сверху). Формат ответа управляется query-параметром `format` (по умолчанию `json`). При `format=csv` ответ — `text/csv` со скачиванием через `Content-Disposition: attachment`. Только ADMIN."
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [json, csv]
+            default: json
+          description: Формат ответа. Значения вне списка → 400.
+      responses:
+        "200":
+          description: Отчёт сгенерирован.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DrawReportEntry"
+            text/csv:
+              schema:
+                type: string
+                example: |
+                  drawId,title,createdAt,endDate,totalTickets,soldTickets,winnerTicketNumber,winnerUserId,winnerLogin,drawnAt,createdByAdminId,createdByAdminLogin
+                  1,"Тираж #1","2026-04-20T12:00:00Z","2026-04-25T18:00:00Z",1000,742,317,42,alice,"2026-04-25T18:00:30Z",1,admin
+        "400":
+          description: Невалидный format (не `json` и не `csv`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "401":
+          description: Нет JWT.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponseBody"
+        "403":
+          description: JWT не от ADMIN.
           content:
             application/json:
               schema:
@@ -870,6 +925,58 @@ components:
         - endDate
         - status
         - createdAt
+
+    # ReportController.java ← одна строка отчёта по завершённым тиражам.
+    # winnerUserId / winnerLogin могут быть null, если выигрышный билет не был куплен.
+    DrawReportEntry:
+      type: object
+      properties:
+        drawId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        totalTickets:
+          type: integer
+          format: int32
+        soldTickets:
+          type: integer
+          format: int32
+        winnerTicketNumber:
+          type: integer
+          format: int32
+        winnerUserId:
+          type: integer
+          format: int64
+          nullable: true
+        winnerLogin:
+          type: string
+          nullable: true
+        drawnAt:
+          type: string
+          format: date-time
+        createdByAdminId:
+          type: integer
+          format: int64
+        createdByAdminLogin:
+          type: string
+      required:
+        - drawId
+        - title
+        - createdAt
+        - endDate
+        - totalTickets
+        - soldTickets
+        - winnerTicketNumber
+        - drawnAt
+        - createdByAdminId
+        - createdByAdminLogin
 
     DrawResultDto:
       type: object
