@@ -181,7 +181,7 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
     }
 
     @Test
-    @DisplayName("")
+    @DisplayName("Должен обновлять статусы билетов по drawId и текущему статусу")
     void shouldUpdateStatusesByDrawIdAndCurrentStatus() throws SQLException {
 
         /*
