@@ -105,6 +105,7 @@ src/main/java/com/team/lottery/
 ├── common/
 │   ├── errors/                    ← ApiException + 5 наследников + ErrorHandler
 │   ├── validation/Validators.java ← примитивы (notBlank, minLen, ...)
+│   ├── db/Tx.java                 ← хелпер для транзакций (Tx.execute)
 │   └── health/HealthController.java
 ├── users/
 │   ├── controller/ (AuthController, UserController)
@@ -123,13 +124,17 @@ src/main/java/com/team/lottery/
 │   ├── mapper/DrawMapper.java
 │   ├── validation/DrawValidators.java
 │   └── scheduler/DrawScheduler.java
-└── ticket/
-    ├── controller/ (TicketController)
-    ├── service/    (TicketService)
-    ├── repository/ (TicketRepository + TicketJdbcRepository)
-    ├── model/      (Ticket — record; TicketStatus enum)
-    ├── dto/        (TicketResponse, BuyTicketResponse — records)
-    └── mapper/TicketMapper.java
+├── ticket/
+│   ├── controller/ (TicketController)
+│   ├── service/    (TicketService)
+│   ├── repository/ (TicketRepository + TicketJdbcRepository)
+│   ├── model/      (Ticket — record; TicketStatus enum)
+│   ├── dto/        (TicketResponse, BuyTicketResponse — records)
+│   └── mapper/TicketMapper.java
+└── reports/
+    ├── controller/ (ReportController)
+    ├── repository/ (ReportRepository + ReportJdbcRepository)
+    └── dto/        (DrawReportEntry — record)
 ```
 
 **Слои:** `Controller` → `Service` → `Repository`. Контроллеры тонкие
