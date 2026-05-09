@@ -13,10 +13,10 @@ import java.util.Optional;
 
 public class DrawResultJdbcRepository implements DrawResultRepository {
 
-    private final DataSource ds;
+    private final DataSource dataSource;
 
-    public DrawResultJdbcRepository(DataSource ds) {
-        this.ds = ds;
+    public DrawResultJdbcRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -58,7 +58,7 @@ public class DrawResultJdbcRepository implements DrawResultRepository {
                 WHERE draw_id = ?
                 """;
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, drawId);

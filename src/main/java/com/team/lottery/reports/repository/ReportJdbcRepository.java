@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReportJdbcRepository implements ReportRepository {
-    private final DataSource ds;
+    private final DataSource dataSource;
 
-    public ReportJdbcRepository(DataSource ds) {
-        this.ds = ds;
+    public ReportJdbcRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -51,7 +51,7 @@ public class ReportJdbcRepository implements ReportRepository {
 
         List<DrawReportEntry> entries = new ArrayList<>();
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, "COMPLETED");

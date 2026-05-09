@@ -16,17 +16,17 @@ import java.util.stream.Collectors;
 
 public class UserJdbcRepository implements UserRepository {
 
-    private final DataSource ds;
+    private final DataSource dataSource;
 
-    public UserJdbcRepository(DataSource ds) {
-        this.ds = ds;
+    public UserJdbcRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
     public boolean existsByLogin(String login) {
         String sql = "SELECT 1 FROM users WHERE login = ? LIMIT 1";
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, login);
@@ -47,7 +47,7 @@ public class UserJdbcRepository implements UserRepository {
                 RETURNING id
                 """;
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, login);
@@ -73,7 +73,7 @@ public class UserJdbcRepository implements UserRepository {
                 LIMIT 1
                 """;
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, login);
@@ -103,7 +103,7 @@ public class UserJdbcRepository implements UserRepository {
                 LIMIT 1
                 """;
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, id);
@@ -133,7 +133,7 @@ public class UserJdbcRepository implements UserRepository {
 
         List<UserResponse> users = new ArrayList<>();
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
 
@@ -170,7 +170,7 @@ public class UserJdbcRepository implements UserRepository {
                 ORDER BY id
                 """.formatted(placeholders);
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             for (int i = 0; i < ids.size(); i++) {

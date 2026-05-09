@@ -14,10 +14,10 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class DrawJdbcRepository implements DrawRepository {
-    private final DataSource ds;
+    private final DataSource dataSource;
 
-    public DrawJdbcRepository(DataSource ds) {
-        this.ds = ds;
+    public DrawJdbcRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -54,7 +54,7 @@ public class DrawJdbcRepository implements DrawRepository {
                 WHERE id = ?
                 """;
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, id);
@@ -80,7 +80,7 @@ public class DrawJdbcRepository implements DrawRepository {
 
         List<Draw> draws = new ArrayList<>();
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet resultSet = statement.executeQuery()) {
 
@@ -104,7 +104,7 @@ public class DrawJdbcRepository implements DrawRepository {
 
         List<Draw> draws = new ArrayList<>();
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, status.name());
@@ -131,7 +131,7 @@ public class DrawJdbcRepository implements DrawRepository {
                 """;
         List<Draw> draws = new ArrayList<>();
 
-        try (Connection connection = ds.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, DrawStatus.ACTIVE.name());
