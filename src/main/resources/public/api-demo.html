@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Lottery API Demo Stand</title>
+    <link rel="stylesheet" href="/css/api-demo.css">
+</head>
+<body>
+
+<header>
+    <h1>Lottery API Demo Stand</h1>
+    <p>Панель для ручной демонстрации основных API-сценариев</p>
+</header>
+
+<main>
+    <div class="token-box">
+        <div><b>Admin token:</b> <code id="adminTokenView">не получен</code></div>
+        <div><b>User token:</b> <code id="userTokenView">не получен</code></div>
+        <div><b>Последний drawId:</b> <code id="drawIdView">не выбран</code></div>
+        <div><b>Старый admin token после logout:</b> <code id="oldAdminTokenView">не сохранён</code></div>
+        <div><b>Старый user token после logout:</b> <code id="oldUserTokenView">не сохранён</code></div>
+    </div>
+
+    <section id="resultPanel" class="result">
+        <div class="result-header">
+            <span id="requestInfo">Запрос ещё не выполнялся</span>
+            <span id="statusInfo" class="muted">status: —</span>
+        </div>
+
+        <pre id="output">Нажми одну из кнопок ниже, чтобы выполнить запрос к API.</pre>
+    </section>
+
+    <h2 class="section-title">1. Базовые проверки</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>API Health</h3>
+            <span class="endpoint">GET /health</span>
+            <p>Проверяет, что backend-приложение запущено и отвечает.</p>
+            <button onclick="sendRequest('GET', '/health')">Проверить API</button>
+        </div>
+
+        <div class="card">
+            <h3>Database Health</h3>
+            <span class="endpoint">GET /health/db</span>
+            <p>Проверяет подключение приложения к PostgreSQL.</p>
+            <button onclick="sendRequest('GET', '/health/db')">Проверить БД</button>
+        </div>
+
+        <div class="card">
+            <h3>Draws</h3>
+            <span class="endpoint">GET /draws</span>
+            <p>Получает список тиражей. Запрос только читает данные.</p>
+            <button onclick="sendRequest('GET', '/draws')">Получить тиражи</button>
+        </div>
+    </section>
+
+    <h2 class="section-title">2. Авторизация</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Вход админа</h3>
+            <span class="endpoint">POST /auth/login</span>
+            <p>Использует seed-админа из миграции: admin / admin123.</p>
+
+            <label for="adminLogin">Логин</label>
+            <input id="adminLogin" value="admin">
+
+            <label for="adminPassword">Пароль</label>
+            <input id="adminPassword" type="password" value="admin123">
+
+            <button onclick="loginAdmin()">Войти как админ</button>
+        </div>
+
+        <div class="card">
+            <h3>Регистрация пользователя</h3>
+            <span class="endpoint">POST /auth/register</span>
+            <p>Создаёт обычного пользователя для покупки билетов. Пароль должен быть не короче 8 символов.</p>
+
+            <label for="userRegisterLogin">Логин</label>
+            <input id="userRegisterLogin" value="demo_user">
+
+            <label for="userRegisterPassword">Пароль</label>
+            <input id="userRegisterPassword" type="password" value="demo1234">
+
+            <button onclick="registerUser()">Зарегистрировать юзера</button>
+        </div>
+
+        <div class="card">
+            <h3>Вход пользователя</h3>
+            <span class="endpoint">POST /auth/login</span>
+            <p>Получает user JWT-токен и сохраняет его на странице.</p>
+
+            <label for="userLogin">Логин</label>
+            <input id="userLogin" value="demo_user">
+
+            <label for="userPassword">Пароль</label>
+            <input id="userPassword" type="password" value="demo1234">
+
+            <button onclick="loginUser()">Войти как юзер</button>
+        </div>
+    </section>
+
+    <h2 class="section-title">3. Admin-сценарии</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Проверить admin-доступ</h3>
+            <span class="endpoint">GET /admin/ping</span>
+            <p>Проверяет, что admin token подходит для защищённых ручек.</p>
+            <button onclick="sendRequest('GET', '/admin/ping', null, adminToken)">Проверить админа</button>
+        </div>
+
+        <div class="card">
+            <h3>Создать тираж</h3>
+            <span class="endpoint">POST /admin/draws</span>
+            <p>Создаёт новый тираж и сохраняет его id для следующих шагов.</p>
+
+            <label for="drawTitle">Название</label>
+            <input id="drawTitle" value="Demo draw">
+
+            <label for="drawEndDate">Дата окончания</label>
+            <input id="drawEndDate" value="2026-05-10T12:00:00+03:00">
+
+            <label for="drawTotalTickets">Количество билетов</label>
+            <input id="drawTotalTickets" type="number" value="10">
+
+            <button onclick="createDraw()">Создать тираж</button>
+        </div>
+
+        <div class="card">
+            <h3>Запустить розыгрыш</h3>
+            <span class="endpoint">POST /admin/draws/{id}/run-draw</span>
+            <p>Запускает розыгрыш по выбранному drawId. Тираж должен быть CLOSED и иметь проданные билеты.</p>
+
+            <label for="runDrawId">Draw ID</label>
+            <input id="runDrawId" placeholder="Например: 1">
+
+            <button onclick="runDraw()">Запустить розыгрыш</button>
+        </div>
+    </section>
+
+    <h2 class="section-title">4. User-сценарии</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Мой профиль</h3>
+            <span class="endpoint">GET /users/me</span>
+            <p>Проверяет user token и показывает текущего пользователя.</p>
+            <button onclick="sendRequest('GET', '/users/me', null, userToken)">Показать меня</button>
+        </div>
+
+        <div class="card">
+            <h3>Купить билет</h3>
+            <span class="endpoint">POST /draws/{id}/tickets</span>
+            <p>Покупает билет в выбранном тираже от имени пользователя.</p>
+
+            <label for="buyTicketDrawId">Draw ID</label>
+            <input id="buyTicketDrawId" placeholder="Например: 1">
+
+            <button onclick="buyTicket()">Купить билет</button>
+        </div>
+
+        <div class="card">
+            <h3>Мои билеты</h3>
+            <span class="endpoint">GET /me/tickets</span>
+            <p>Показывает билеты текущего пользователя.</p>
+            <button onclick="sendRequest('GET', '/me/tickets', null, userToken)">Показать мои билеты</button>
+        </div>
+
+        <div class="card">
+            <h3>Мои результаты</h3>
+            <span class="endpoint">GET /me/results</span>
+            <p>Показывает выигрышные/результирующие билеты пользователя.</p>
+            <button onclick="sendRequest('GET', '/me/results', null, userToken)">Показать мои результаты</button>
+        </div>
+    </section>
+
+    <h2 class="section-title">5. Результаты и отчёты</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Результат тиража</h3>
+            <span class="endpoint">GET /draws/{id}/result</span>
+            <p>Показывает результат конкретного тиража.</p>
+
+            <label for="resultDrawId">Draw ID</label>
+            <input id="resultDrawId" placeholder="Например: 1">
+
+            <button onclick="getDrawResult()">Показать результат</button>
+        </div>
+
+        <div class="card">
+            <h3>Отчёт по завершённым тиражам</h3>
+            <span class="endpoint">GET /admin/reports/draws/completed</span>
+            <p>Admin-запрос. Возвращает JSON-отчёт по завершённым тиражам.</p>
+            <button onclick="sendRequest('GET', '/admin/reports/draws/completed', null, adminToken)">
+                Получить отчёт
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>Вошедшие пользователи</h3>
+            <span class="endpoint">GET /admin/logged-in-users</span>
+            <p>Показывает пользователей, у которых сейчас есть токены в памяти приложения.</p>
+            <button onclick="sendRequest('GET', '/admin/logged-in-users', null, adminToken)">
+                Показать logged-in users
+            </button>
+        </div>
+    </section>
+
+    <h2 class="section-title">6. Проверка авторизации и ошибок</h2>
+
+    <section class="panel">
+        <div class="card">
+            <h3>Выйти как пользователь</h3>
+            <span class="endpoint">POST /auth/logout</span>
+            <p>Завершает пользовательскую сессию и сохраняет старый user token для проверки.</p>
+            <button class="danger" onclick="logoutUser()">Выйти как юзер</button>
+        </div>
+
+        <div class="card">
+            <h3>Проверить старый user token</h3>
+            <span class="endpoint">GET /users/me</span>
+            <p>После logout старый user token должен вернуть 401 Unauthorized.</p>
+            <button class="secondary" onclick="checkOldUserToken()">Проверить старый user token</button>
+        </div>
+
+        <div class="card">
+            <h3>Выйти как админ</h3>
+            <span class="endpoint">POST /auth/logout</span>
+            <p>Завершает admin-сессию и сохраняет старый admin token для проверки.</p>
+            <button class="danger" onclick="logoutAdmin()">Выйти как админ</button>
+        </div>
+
+        <div class="card">
+            <h3>Проверить старый admin token</h3>
+            <span class="endpoint">GET /admin/ping</span>
+            <p>После logout старый admin token должен вернуть 401 Unauthorized.</p>
+            <button class="secondary" onclick="checkOldAdminToken()">Проверить старый admin token</button>
+        </div>
+
+        <div class="card">
+            <h3>User token в admin endpoint</h3>
+            <span class="endpoint">GET /admin/ping</span>
+            <p>Проверяет, что обычный пользователь не может пройти в admin-ручку.</p>
+            <button class="secondary" onclick="sendRequest('GET', '/admin/ping', null, userToken)">
+                Проверить admin с user token
+            </button>
+        </div>
+
+        <div class="card">
+            <h3>Покупка билета без токена</h3>
+            <span class="endpoint">POST /draws/{id}/tickets</span>
+            <p>Проверяет, что купить билет без Authorization нельзя.</p>
+
+            <label for="buyWithoutTokenDrawId">Draw ID</label>
+            <input id="buyWithoutTokenDrawId" placeholder="Например: 1">
+
+            <button class="secondary" onclick="buyTicketWithoutToken()">Купить без токена</button>
+        </div>
+    </section>
+</main>
+
+<footer>
+    Открывать через backend: http://localhost:8080/api-demo.html
+</footer>
+
+<script src="/js/api-demo.js"></script>
+</body>
+</html>
