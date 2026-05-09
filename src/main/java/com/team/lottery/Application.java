@@ -22,6 +22,7 @@ import com.team.lottery.users.repository.UserJdbcRepository;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.AuthService;
 import com.team.lottery.users.service.TokenService;
+import com.team.lottery.users.util.PasswordUtil;
 import com.team.lottery.common.health.HealthController;
 import com.zaxxer.hikari.HikariDataSource;
 import io.javalin.Javalin;
@@ -79,8 +80,9 @@ public final class Application {
         UserRepository userRepository = new UserJdbcRepository(ds);
         TokenService tokenService = new TokenService();
         AuthService authService = new AuthService(tokenService, userRepository);
+        PasswordUtil passwordUtil = new PasswordUtil(cfg.bcryptCost());
 
-        AuthController authController = new AuthController(userRepository, tokenService, authService);
+        AuthController authController = new AuthController(userRepository, tokenService, authService, passwordUtil);
         UserController userController = new UserController(userRepository, tokenService, authService);
 
         DrawRepository drawRepository = new DrawJdbcRepository(ds);

@@ -2,18 +2,23 @@ package com.team.lottery.users.util;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+/**
+ * BCrypt-обёртка. Конфигурируемая стоимость хеширования (logRounds)
+ * прокидывается через конструктор из {@code AppConfig.bcryptCost()}.
+ */
 public final class PasswordUtil {
 
-    private static final int LOG_ROUNDS = 10;
+    private final int logRounds;
 
-    private PasswordUtil() {
+    public PasswordUtil(int logRounds) {
+        this.logRounds = logRounds;
     }
 
-    public static String hashPassword(String rawPassword) {
-        return BCrypt.hashpw(rawPassword, BCrypt.gensalt(LOG_ROUNDS));
+    public String hashPassword(String rawPassword) {
+        return BCrypt.hashpw(rawPassword, BCrypt.gensalt(logRounds));
     }
 
-    public static boolean matches(String rawPassword, String passwordHash) {
+    public boolean matches(String rawPassword, String passwordHash) {
         return BCrypt.checkpw(rawPassword, passwordHash);
     }
 }

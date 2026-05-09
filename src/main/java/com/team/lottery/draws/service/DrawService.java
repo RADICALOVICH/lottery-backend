@@ -122,17 +122,16 @@ public class DrawService {
             throw new ConflictException("Draw must be CLOSED to run");
         }
 
-        // Запрет проведения розыгрыша, если нет проданных билетов.
-         List<Ticket> soldTickets = ticketRepository.findByDrawId(drawId).stream()
-                .filter(t -> t.status() == TicketStatus.SOLD)
-                .toList();
-        if (soldTickets.isEmpty()) {
-            throw new ConflictException("No tickets sold - cannot run draw");
-        }
-
+        
         List<Ticket> allTickets = ticketRepository.findByDrawId(drawId);
         if (allTickets.isEmpty()) {
             throw new ConflictException("Draw cannot be run without tickets");
+        }
+
+        boolean hasSoldTickets = allTickets.stream()
+                .anyMatch(t -> t.status() == TicketStatus.SOLD);
+        if (!hasSoldTickets) {
+            throw new ConflictException("No tickets sold - cannot run draw");
         }
 
         int winningIndex = ThreadLocalRandom.current().nextInt(allTickets.size());

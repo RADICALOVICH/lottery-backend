@@ -7,10 +7,10 @@ import java.util.Map;
 
 public class HealthController {
 
-    private final DataSource ds;
+    private final DataSource dataSource;
 
-    public HealthController(DataSource ds) {
-        this.ds = ds;
+    public HealthController(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public void registerRoutes(RoutesConfig routes) {
@@ -20,7 +20,7 @@ public class HealthController {
         )));
 
         routes.get("/health/db", ctx -> {
-            try (var connection = ds.getConnection()) {
+            try (var connection = dataSource.getConnection()) {
                 boolean valid = connection.isValid(2);
 
                 String url = connection.getMetaData().getURL();

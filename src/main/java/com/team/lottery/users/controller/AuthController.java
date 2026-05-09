@@ -3,7 +3,10 @@ package com.team.lottery.users.controller;
 import com.team.lottery.common.errors.ConflictException;
 import com.team.lottery.common.errors.UnauthorizedException;
 import com.team.lottery.users.dto.LoginRequest;
+import com.team.lottery.users.dto.LoginResponse;
+import com.team.lottery.users.dto.LogoutResponse;
 import com.team.lottery.users.dto.RegisterRequest;
+import com.team.lottery.users.dto.RegisterResponse;
 import com.team.lottery.users.model.UserAuthData;
 import com.team.lottery.users.repository.UserRepository;
 import com.team.lottery.users.service.AuthService;
@@ -12,18 +15,21 @@ import com.team.lottery.users.util.PasswordUtil;
 import com.team.lottery.users.validation.AuthValidators;
 import io.javalin.config.RoutesConfig;
 
-import java.util.Map;
-
 public class AuthController {
 
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final AuthService auth;
+    private final PasswordUtil passwordUtil;
 
-    public AuthController(UserRepository userRepository, TokenService tokenService, AuthService auth) {
+    public AuthController(UserRepository userRepository,
+                          TokenService tokenService,
+                          AuthService auth,
+                          PasswordUtil passwordUtil) {
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.auth = auth;
+        this.passwordUtil = passwordUtil;
     }
 
     public void registerRoutes(RoutesConfig routes) {
@@ -39,13 +45,13 @@ public class AuthController {
                 throw new ConflictException("Login already exists");
             }
 
-            String passwordHash = PasswordUtil.hashPassword(request.password());
+            String passwordHash = passwordUtil.hashPassword(request.password());
             long userId = userRepository.createUser(login, passwordHash);
 
-            ctx.status(201).json(Map.of(
-                    "id", userId,
-                    "login", login,
-                    "message", "User registered successfully"
+            ctx.status(201).json(new RegisterResponse(
+                    userId,
+                    login,
+                    "User registered successfully"
             ));
         });
 
@@ -61,11 +67,8 @@ public class AuthController {
 
             UserAuthData user = userRepository.findByLogin(login)
                     .orElseThrow(() -> new UnauthorizedException(failureMsg));
-            if (user == null) {
-                throw new UnauthorizedException(failureMsg);
-            }
 
-            boolean passwordMatches = PasswordUtil.matches(
+            boolean passwordMatches = passwordUtil.matches(
                     request.password(),
                     user.passwordHash()
             );
@@ -74,33 +77,22 @@ public class AuthController {
                 throw new UnauthorizedException(failureMsg);
             }
 
-            if (tokenService.hasToken(user.id())) {
-                String existingToken = tokenService.getTokenByUserId(user.id());
+            String token = tokenService.hasToken(user.id())
+                    ? tokenService.getTokenByUserId(user.id())
+                    : tokenService.generateOrGetToken(user.id());
 
-                ctx.status(200).json(Map.of(
-                        "message", successMsg,
-                        "token", existingToken,
-                        "id", user.id(),
-                        "login", user.login(),
-                        "role", user.role()
-                ));
-                return;
-            }
-
-            String token = tokenService.generateOrGetToken(user.id());
-
-            ctx.status(200).json(Map.of(
-                    "message", successMsg,
-                    "token", token,
-                    "id", user.id(),
-                    "login", user.login(),
-                    "role", user.role()
+            ctx.status(200).json(new LoginResponse(
+                    successMsg,
+                    token,
+                    user.id(),
+                    user.login(),
+                    user.role()
             ));
         });
 
         routes.post("/auth/logout", ctx -> {
             auth.logout(ctx);
-            ctx.status(200).json(Map.of("message", "Logout successful"));
+            ctx.status(200).json(new LogoutResponse("Logout successful"));
         });
     }
 }
