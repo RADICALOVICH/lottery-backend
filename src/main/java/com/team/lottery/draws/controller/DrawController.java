@@ -7,6 +7,7 @@ import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.common.errors.NotFoundException;
+import com.team.lottery.common.web.RequestParams;
 import io.javalin.config.RoutesConfig;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class DrawController {
             if (statusParam == null || statusParam.isBlank()) {
                 draws = drawService.getAllDraws();
             } else {
-                DrawStatus status = DrawStatus.valueOf(statusParam.toUpperCase());
+                DrawStatus status = RequestParams.requireEnum(ctx, "status", DrawStatus.class);
                 draws = drawService.getDrawsByStatus(status);
             }
 
@@ -46,7 +47,7 @@ public class DrawController {
         });
 
        routes.get("/draws/{id}", ctx -> {
-            Long drawId = Long.valueOf(ctx.pathParam("id"));
+            long drawId = RequestParams.requireLong(ctx, "id");
 
             Draw draw = drawService.getDrawById(drawId)
                     .orElseThrow(() -> new NotFoundException("Draw not found with id: " + drawId));
@@ -55,7 +56,7 @@ public class DrawController {
         });
 
        routes.get("/draws/{id}/result", ctx -> {
-            Long drawId = Long.valueOf(ctx.pathParam("id"));
+            long drawId = RequestParams.requireLong(ctx, "id");
 
            DrawResultResponse response = drawService.getDrawResultByDrawId(drawId)
                    .map(DrawMapper::toResultResponse)
@@ -64,4 +65,5 @@ public class DrawController {
            ctx.json(response);
        });
     }
+
 }

@@ -6,6 +6,7 @@ import com.team.lottery.draws.mapper.DrawMapper;
 import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.users.service.AuthService;
+import com.team.lottery.common.web.RequestParams;
 import io.javalin.config.RoutesConfig;
 
 public class AdminDrawController {
@@ -31,7 +32,7 @@ public class AdminDrawController {
         routes.post("/admin/draws/{id}/run-draw", ctx -> {
             auth.requireAdmin(ctx);
 
-            Long drawId = Long.valueOf(ctx.pathParam("id"));
+            long drawId = RequestParams.requireLong(ctx, "id");
             Draw updatedDraw = drawService.runDraw(drawId);
 
             DrawResponse response = DrawMapper.toResponse(updatedDraw);

@@ -5,6 +5,7 @@ import com.team.lottery.ticket.dto.TicketResponse;
 import com.team.lottery.ticket.mapper.TicketMapper;
 import com.team.lottery.ticket.service.TicketService;
 import com.team.lottery.users.service.AuthService;
+import com.team.lottery.common.web.RequestParams;
 import io.javalin.config.RoutesConfig;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class TicketController {
     public void registerRoutes(RoutesConfig routes) {
         routes.post("/draws/{id}/tickets", ctx -> {
             long userId = auth.requireUser(ctx).id();
-            long drawId = Long.parseLong(ctx.pathParam("id"));
+            long drawId = RequestParams.requireLong(ctx, "id");
 
             var ticket = ticketService.buyTicket(drawId, userId);
 
