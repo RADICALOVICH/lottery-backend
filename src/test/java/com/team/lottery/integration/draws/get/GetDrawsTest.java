@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.notNullValue;
 
 import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -128,6 +129,29 @@ public class GetDrawsTest extends BaseTest {
                 .body("size()", equalTo(1))
                 .body("[0].title", equalTo("Активный тираж"))
                 .body("[0].status", equalTo("ACTIVE"));
+    }
+
+    @Test
+    public void filterDrawsByInvalidStatus() {
+        /*
+         * Сценарий: GET /draws?status=CANCELED — статуса CANCELED нет в enum.
+         * Ожидаемый результат: 400 VALIDATION_FAILED со списком допустимых
+         *                      значений (ACTIVE, CLOSED, COMPLETED) и принятым
+         *                      значением в сообщении.
+         */
+        given()
+                .queryParam("status", "CANCELED")
+                .when()
+                .get(url)
+                .then()
+                .log().ifValidationFails()
+                .statusCode(400)
+                .contentType(ContentType.JSON)
+                .body("code", equalTo("VALIDATION_FAILED"))
+                .body("message", containsString("ACTIVE"))
+                .body("message", containsString("CLOSED"))
+                .body("message", containsString("COMPLETED"))
+                .body("message", containsString("CANCELED"));
     }
 
 }

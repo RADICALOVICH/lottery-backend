@@ -7,8 +7,10 @@ import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.common.errors.NotFoundException;
+import com.team.lottery.common.errors.ValidationException;
 import io.javalin.config.RoutesConfig;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,7 +36,7 @@ public class DrawController {
             if (statusParam == null || statusParam.isBlank()) {
                 draws = drawService.getAllDraws();
             } else {
-                DrawStatus status = DrawStatus.valueOf(statusParam.toUpperCase());
+                DrawStatus status = parseStatus(statusParam);
                 draws = drawService.getDrawsByStatus(status);
             }
 
@@ -63,5 +65,17 @@ public class DrawController {
 
            ctx.json(response);
        });
+    }
+
+    private static DrawStatus parseStatus(String raw) {
+        try {
+            return DrawStatus.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            String allowed = Arrays.stream(DrawStatus.values())
+                    .map(Enum::name)
+                    .collect(Collectors.joining(", "));
+            throw new ValidationException(
+                    "status must be one of [" + allowed + "], got '" + raw + "'");
+        }
     }
 }
