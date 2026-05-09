@@ -43,3 +43,6 @@ TestApi/smoke_full_scenario.http
 
 .postman/
 postman/refactor.md
+
+# Local manual HTTP API tests
+TestApi/
