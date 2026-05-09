@@ -62,8 +62,17 @@
         <div class="card">
             <h3>Draws</h3>
             <span class="endpoint">GET /draws</span>
-            <p>Получает список тиражей. Запрос только читает данные.</p>
-            <button onclick="sendRequest('GET', '/draws')">Получить тиражи</button>
+            <p>Получает список тиражей. Можно показать все тиражи или отфильтровать по статусу.</p>
+
+            <label for="drawStatusFilter">Статус</label>
+            <select id="drawStatusFilter">
+                <option value="">Все статусы</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="CLOSED">CLOSED</option>
+                <option value="COMPLETED">COMPLETED</option>
+            </select>
+
+            <button onclick="getDraws()">Получить тиражи</button>
         </div>
     </section>
 

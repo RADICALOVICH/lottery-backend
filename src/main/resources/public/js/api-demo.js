@@ -175,6 +175,18 @@ async function loginUser() {
     }
 }
 
+async function getDraws() {
+    const status = document.getElementById("drawStatusFilter").value;
+
+    let endpoint = "/draws";
+
+    if (status) {
+        endpoint = endpoint + "?status=" + encodeURIComponent(status);
+    }
+
+    await sendRequest("GET", endpoint);
+}
+
 async function createDraw() {
     const body = {
         title: document.getElementById("drawTitle").value,
