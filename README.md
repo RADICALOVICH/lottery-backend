@@ -13,7 +13,10 @@
 - Создание тиражей администратором (билеты пред-генерируются в статусе `AVAILABLE`).
 - Получение списка активных тиражей (`GET /draws?status=ACTIVE`).
 - Покупка билетов пользователем (`POST /draws/{id}/tickets`).
-- Закрытие продажи билетов автоматически по `end_date` (шедулер раз в 30 секунд).
+  ADMIN покупать билеты не может — намеренное ограничение, чтобы исключить
+  конфликт интересов (админ управляет тиражами).
+- Закрытие продажи билетов автоматически по `end_date`. Период опроса
+  настраивается через `DRAW_SCHEDULER_INTERVAL_SECONDS` (дефолт 30 сек).
 - Проведение розыгрыша администратором по API (`POST /admin/draws/{id}/run-draw`).
 - Получение результата тиража (`GET /draws/{id}/result`) и статусов билетов
   (`WIN` / `LOSE`) в `GET /me/results`.
@@ -28,11 +31,11 @@
 ## Стек
 
 - **Java 17** (toolchain в Gradle)
-- **Gradle 8.8** + Shadow plugin (fat-jar)
-- **Javalin 6.7** — HTTP-сервер. Без Spring / Spring Boot, как требует ТЗ.
+- **Gradle 9.3** + Shadow plugin 9.4 (fat-jar)
+- **Javalin 7.1** — HTTP-сервер. Без Spring / Spring Boot, как требует ТЗ.
 - **PostgreSQL 16** + native ENUM-типы (`user_role`, `draw_status`, `ticket_status`)
-- **HikariCP 5.1** — пул соединений
-- **Flyway 10** — миграции, накатываются из кода при старте
+- **HikariCP 7** — пул соединений
+- **Flyway 12** — миграции, накатываются из кода при старте
 - **Jackson 2.21** — JSON и CSV (для отчётов)
 - **JBCrypt 0.4** — хеширование паролей
 - **JDBC-only**, без ORM. Все запросы — `PreparedStatement` руками.
@@ -73,9 +76,11 @@ docker compose down -v
 ## Переменные окружения
 
 Все параметры имеют дефолты в `src/main/resources/application.properties` и
-перекрываются ENV.
+перекрываются ENV. Для запуска через `docker compose` все значения уже
+проставлены в `docker-compose.yml` — таблица ниже нужна, только если
+запускаете приложение вне Docker.
 
-| ENV | Назначение | Дефолт |
+| ENV | Назначение | Дефолт (без Docker) |
 |---|---|---|
 | `APP_PORT` | Порт HTTP | `8080` |
 | `DB_URL` | JDBC URL Postgres | `jdbc:postgresql://localhost:5433/lottery` |
@@ -83,10 +88,13 @@ docker compose down -v
 | `DB_PASSWORD` | Пароль БД | `lottery_dev_password` |
 | `DB_POOL_SIZE` | Размер пула Hikari | `10` |
 | `BCRYPT_COST` | Стоимость BCrypt | `12` |
-| `DRAW_SCHEDULER_INTERVAL_SECONDS` | Период опроса просроченных draw'ов | `60` |
+| `DRAW_SCHEDULER_INTERVAL_SECONDS` | Период опроса просроченных draw'ов | `30` |
 
-В `docker-compose.yml` все ENV для контейнера `app` уже проставлены —
-менять не обязательно.
+`DB_URL` указывает на `localhost:5433` именно для локального запуска без
+Docker — порт 5433 проброшен с контейнера `db` на хост, чтобы не
+конфликтовать с локально установленным Postgres. Внутри compose-сети
+приложение ходит к `db:5432` (это значение и проставлено в
+`docker-compose.yml`).
 
 ---
 
@@ -217,7 +225,7 @@ AVAILABLE — тогда он переходит в WIN с `owner_id = null`. З
 | Метод | Путь | Описание |
 |---|---|---|
 | `GET` | `/users/me` | текущий пользователь |
-| `POST` | `/draws/{id}/tickets` | купить билет в тираже |
+| `POST` | `/draws/{id}/tickets` | купить билет в тираже (только USER, ADMIN получает 403) |
 | `GET` | `/me/tickets` | мои билеты |
 | `GET` | `/me/results` | мои билеты со статусом WIN/LOSE |
 
@@ -340,6 +348,25 @@ JVM, миграции прогоняются автоматически).
 ```bash
 ./gradlew test jacocoTestReport
 # build/reports/jacoco/test/html/index.html
+```
+
+---
+
+## Демо-стенд в браузере
+
+После старта приложения по адресу `http://localhost:8080/api-demo.html`
+доступна интерактивная HTML-страница: можно прокликать весь сценарий
+(логин админа → создание тиража → регистрация и логин пользователя →
+покупка билета → закрытие тиража → розыгрыш → результаты → отчёт),
+не подымая Postman / curl.
+
+Статика лежит в `src/main/resources/public/`:
+
+```
+public/
+├── api-demo.html
+├── css/api-demo.css
+└── js/api-demo.js
 ```
 
 ---

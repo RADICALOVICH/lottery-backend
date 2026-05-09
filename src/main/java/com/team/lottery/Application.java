@@ -99,7 +99,7 @@ public final class Application {
         ReportRepository reportRepository = new ReportJdbcRepository(ds);
         ReportController reportController = new ReportController(reportRepository, authService);
 
-        DrawScheduler drawScheduler = new DrawScheduler(ds, drawRepository);
+        DrawScheduler drawScheduler = new DrawScheduler(ds, drawRepository, cfg.drawSchedulerIntervalSeconds());
 
         Javalin app = JavalinConfig.create(
                 cfg.isProd(),

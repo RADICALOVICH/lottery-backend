@@ -26,15 +26,17 @@ public class DrawScheduler {
 
     private final DataSource dataSource;
     private final DrawRepository drawRepository;
+    private final int intervalSeconds;
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
-    public DrawScheduler(DataSource dataSource, DrawRepository drawRepository) {
+    public DrawScheduler(DataSource dataSource, DrawRepository drawRepository, int intervalSeconds) {
         this.dataSource = dataSource;
         this.drawRepository = drawRepository;
+        this.intervalSeconds = intervalSeconds;
     }
 
     public void start() {
-        executor.scheduleWithFixedDelay(this::processEndedDraws, 10, 30, TimeUnit.SECONDS);
+        executor.scheduleWithFixedDelay(this::processEndedDraws, 10, intervalSeconds, TimeUnit.SECONDS);
     }
 
     public void stop() {

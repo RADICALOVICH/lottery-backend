@@ -1,9 +1,11 @@
 package com.team.lottery.ticket.controller;
 
+import com.team.lottery.common.errors.ForbiddenException;
 import com.team.lottery.ticket.dto.BuyTicketResponse;
 import com.team.lottery.ticket.dto.TicketResponse;
 import com.team.lottery.ticket.mapper.TicketMapper;
 import com.team.lottery.ticket.service.TicketService;
+import com.team.lottery.users.model.UserResponse;
 import com.team.lottery.users.service.AuthService;
 import com.team.lottery.common.web.RequestParams;
 import io.javalin.config.RoutesConfig;
@@ -23,10 +25,13 @@ public class TicketController {
 
     public void registerRoutes(RoutesConfig routes) {
         routes.post("/draws/{id}/tickets", ctx -> {
-            long userId = auth.requireUser(ctx).id();
+            UserResponse user = auth.requireUser(ctx);
+            if ("ADMIN".equals(user.role())) {
+                throw new ForbiddenException("Admins are not allowed to buy tickets");
+            }
             long drawId = RequestParams.requireLong(ctx, "id");
 
-            var ticket = ticketService.buyTicket(drawId, userId);
+            var ticket = ticketService.buyTicket(drawId, user.id());
 
             ctx.status(200).json(new BuyTicketResponse(
                     "Ticket purchased successfully",

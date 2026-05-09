@@ -7,7 +7,6 @@ import com.team.lottery.draws.scheduler.DrawScheduler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,13 +31,13 @@ class DrawSchedulerTest {
     @Mock
     private DrawRepository drawRepository;
 
-    @InjectMocks
     private DrawScheduler drawScheduler;
 
     private Draw testDraw;
 
     @BeforeEach
     void setUp() throws Exception {
+        drawScheduler = new DrawScheduler(dataSource, drawRepository, 30);
         testDraw = new Draw(100L, "Scheduled Draw", null, null, null, null, null);
         when(dataSource.getConnection()).thenReturn(connection);
     }
