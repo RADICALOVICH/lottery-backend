@@ -7,10 +7,9 @@ import com.team.lottery.draws.model.Draw;
 import com.team.lottery.draws.service.DrawService;
 import com.team.lottery.draws.model.DrawStatus;
 import com.team.lottery.common.errors.NotFoundException;
-import com.team.lottery.common.errors.ValidationException;
+import com.team.lottery.common.web.RequestParams;
 import io.javalin.config.RoutesConfig;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,7 +35,7 @@ public class DrawController {
             if (statusParam == null || statusParam.isBlank()) {
                 draws = drawService.getAllDraws();
             } else {
-                DrawStatus status = parseStatus(statusParam);
+                DrawStatus status = RequestParams.requireEnum(ctx, "status", DrawStatus.class);
                 draws = drawService.getDrawsByStatus(status);
             }
 
@@ -48,7 +47,7 @@ public class DrawController {
         });
 
        routes.get("/draws/{id}", ctx -> {
-            Long drawId = Long.valueOf(ctx.pathParam("id"));
+            long drawId = RequestParams.requireLong(ctx, "id");
 
             Draw draw = drawService.getDrawById(drawId)
                     .orElseThrow(() -> new NotFoundException("Draw not found with id: " + drawId));
@@ -57,7 +56,7 @@ public class DrawController {
         });
 
        routes.get("/draws/{id}/result", ctx -> {
-            Long drawId = Long.valueOf(ctx.pathParam("id"));
+            long drawId = RequestParams.requireLong(ctx, "id");
 
            DrawResultResponse response = drawService.getDrawResultByDrawId(drawId)
                    .map(DrawMapper::toResultResponse)
@@ -67,15 +66,4 @@ public class DrawController {
        });
     }
 
-    private static DrawStatus parseStatus(String raw) {
-        try {
-            return DrawStatus.valueOf(raw.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            String allowed = Arrays.stream(DrawStatus.values())
-                    .map(Enum::name)
-                    .collect(Collectors.joining(", "));
-            throw new ValidationException(
-                    "status must be one of [" + allowed + "], got '" + raw + "'");
-        }
-    }
 }

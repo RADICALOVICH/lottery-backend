@@ -132,6 +132,25 @@ public class GetDrawsTest extends BaseTest {
     }
 
     @Test
+    public void getDrawByNonNumericIdReturns400() {
+        /*
+         * Сценарий: GET /draws/abc — id должен быть числом.
+         * Ожидаемый результат: 400 VALIDATION_FAILED со ссылкой на параметр id
+         *                      и принятым значением.
+         */
+        given()
+                .when()
+                .get("/draws/abc")
+                .then()
+                .log().ifValidationFails()
+                .statusCode(400)
+                .contentType(ContentType.JSON)
+                .body("code", equalTo("VALIDATION_FAILED"))
+                .body("message", containsString("id"))
+                .body("message", containsString("abc"));
+    }
+
+    @Test
     public void filterDrawsByInvalidStatus() {
         /*
          * Сценарий: GET /draws?status=CANCELED — статуса CANCELED нет в enum.
