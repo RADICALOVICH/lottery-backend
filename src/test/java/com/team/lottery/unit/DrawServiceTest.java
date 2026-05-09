@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -126,13 +125,15 @@ class DrawServiceTest {
     @Test
     void runDraw_NoSoldTickets_ThrowsException() {
         /*
-        Должен бросать ConflictException, если нет проданных билетов.
+        Должен бросать ConflictException, если в тираже есть билеты,
+        но ни один не куплен (все в статусе AVAILABLE).
         * */
         Long drawId = 10L;
         Draw draw = new Draw(drawId, null, DrawStatus.CLOSED, null, null, null, null);
+        Ticket availableTicket = new Ticket(1L, drawId, null, 1, TicketStatus.AVAILABLE, null);
 
         when(drawRepository.findById(drawId)).thenReturn(Optional.of(draw));
-        when(ticketRepository.findByDrawId(drawId)).thenReturn(Collections.emptyList());
+        when(ticketRepository.findByDrawId(drawId)).thenReturn(List.of(availableTicket));
 
         assertThatThrownBy(() -> drawService.runDraw(drawId))
                 .isInstanceOf(ConflictException.class)

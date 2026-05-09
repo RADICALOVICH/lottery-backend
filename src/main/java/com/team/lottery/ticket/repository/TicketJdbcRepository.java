@@ -19,7 +19,11 @@ public class TicketJdbcRepository implements TicketRepository {
 
     @Override
     public Optional<Ticket> findById(long id) {
-        String sql = "SELECT id, draw_id, owner_id, ticket_number, status, created_at FROM tickets WHERE id = ?";
+        String sql = """
+                SELECT id, draw_id, owner_id, ticket_number, status, created_at
+                FROM tickets
+                WHERE id = ?
+                """;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
@@ -33,20 +37,36 @@ public class TicketJdbcRepository implements TicketRepository {
 
     @Override
     public List<Ticket> findByOwnerId(long ownerId) {
-        String sql = "SELECT id, draw_id, owner_id, ticket_number, status, created_at FROM tickets WHERE owner_id = ? ORDER BY id";
+        String sql = """
+                SELECT id, draw_id, owner_id, ticket_number, status, created_at
+                FROM tickets
+                WHERE owner_id = ?
+                ORDER BY id
+                """;
         return executeQuery(sql, ps -> ps.setLong(1, ownerId));
     }
 
     @Override
     public List<Ticket> findByDrawId(long drawId) {
-        String sql = "SELECT id, draw_id, owner_id, ticket_number, status, created_at FROM tickets WHERE draw_id = ? ORDER BY ticket_number";
+        String sql = """
+                SELECT id, draw_id, owner_id, ticket_number, status, created_at
+                FROM tickets
+                WHERE draw_id = ?
+                ORDER BY ticket_number
+                """;
         return executeQuery(sql, ps -> ps.setLong(1, drawId));
     }
 
     @Override
     public Optional<Ticket> findAnyAvailableByDrawIdForUpdate(Connection connection, long drawId) {
-        String sql = "SELECT id, draw_id, owner_id, ticket_number, status, created_at FROM tickets " +
-                "WHERE draw_id = ? AND status = 'AVAILABLE' ORDER BY ticket_number LIMIT 1 FOR UPDATE SKIP LOCKED";
+        String sql = """
+                SELECT id, draw_id, owner_id, ticket_number, status, created_at
+                FROM tickets
+                WHERE draw_id = ? AND status = 'AVAILABLE'
+                ORDER BY ticket_number
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+                """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1, drawId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -59,7 +79,11 @@ public class TicketJdbcRepository implements TicketRepository {
 
     @Override
     public boolean buyTicket(Connection connection, long ticketId, long userId) {
-        String sql = "UPDATE tickets SET owner_id = ?, status = 'SOLD' WHERE id = ? AND status = 'AVAILABLE' AND owner_id IS NULL";
+        String sql = """
+                UPDATE tickets
+                SET owner_id = ?, status = 'SOLD'
+                WHERE id = ? AND status = 'AVAILABLE' AND owner_id IS NULL
+                """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.setLong(2, ticketId);
@@ -71,7 +95,11 @@ public class TicketJdbcRepository implements TicketRepository {
 
     @Override
     public void updateStatus(Connection connection, long ticketId, TicketStatus status) {
-        String sql = "UPDATE tickets SET status = ?::ticket_status WHERE id = ?";
+        String sql = """
+                UPDATE tickets
+                SET status = ?::ticket_status
+                WHERE id = ?
+                """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, status.name());
             ps.setLong(2, ticketId);
@@ -83,7 +111,11 @@ public class TicketJdbcRepository implements TicketRepository {
 
     @Override
     public void updateStatusesByDrawIdAndCurrentStatus(Connection connection, long drawId, TicketStatus currentStatus, TicketStatus newStatus) {
-        String sql = "UPDATE tickets SET status = ?::ticket_status WHERE draw_id = ? AND status = ?::ticket_status";
+        String sql = """
+                UPDATE tickets
+                SET status = ?::ticket_status
+                WHERE draw_id = ? AND status = ?::ticket_status
+                """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, newStatus.name());
             ps.setLong(2, drawId);
@@ -96,7 +128,10 @@ public class TicketJdbcRepository implements TicketRepository {
 
     @Override
     public void createTickets(long drawId, int totalTickets) {
-        String sql = "INSERT INTO tickets (draw_id, owner_id, ticket_number, status) VALUES (?, NULL, ?, 'AVAILABLE')";
+        String sql = """
+                INSERT INTO tickets (draw_id, owner_id, ticket_number, status)
+                VALUES (?, NULL, ?, 'AVAILABLE')
+                """;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             conn.setAutoCommit(false); // Для ускорения пакетной вставки
@@ -114,9 +149,11 @@ public class TicketJdbcRepository implements TicketRepository {
 
     @Override
     public Ticket save(Connection connection, Ticket ticket) {
-        String sql = "INSERT INTO tickets (draw_id, owner_id, ticket_number, status, created_at) " +
-                "VALUES (?, ?, ?, ?::ticket_status, ?) " +
-                "RETURNING id, draw_id, owner_id, ticket_number, status, created_at";
+        String sql = """
+                INSERT INTO tickets (draw_id, owner_id, ticket_number, status, created_at)
+                VALUES (?, ?, ?, ?::ticket_status, ?)
+                RETURNING id, draw_id, owner_id, ticket_number, status, created_at
+                """;
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1, ticket.drawId());
             if (ticket.ownerId() == null) ps.setNull(2, Types.BIGINT);
