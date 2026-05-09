@@ -3,6 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Lottery API Demo Stand</title>
+
+    <script>
+        (function redirectToBackendIfOpenedFromIdea() {
+            const isIdeaPreview = window.location.port === "63342";
+            const isFilePreview = window.location.protocol === "file:";
+
+            if (isIdeaPreview || isFilePreview) {
+                window.location.href = "http://localhost:8080/api-demo.html";
+            }
+        })();
+    </script>
+
     <link rel="stylesheet" href="/css/api-demo.css">
 </head>
 <body>
