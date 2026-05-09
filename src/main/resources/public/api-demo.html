@@ -214,9 +214,14 @@
         <div class="card">
             <h3>Отчёт по завершённым тиражам</h3>
             <span class="endpoint">GET /admin/reports/draws/completed</span>
-            <p>Admin-запрос. Возвращает JSON-отчёт по завершённым тиражам.</p>
+            <p>Admin-запрос. Возвращает JSON-отчёт или скачивает CSV-файл по завершённым тиражам.</p>
+
             <button onclick="sendRequest('GET', '/admin/reports/draws/completed', null, adminToken)">
-                Получить отчёт
+                Получить JSON-отчёт
+            </button>
+
+            <button class="secondary" onclick="downloadCompletedDrawsCsv()">
+                Скачать CSV-отчёт
             </button>
         </div>
 

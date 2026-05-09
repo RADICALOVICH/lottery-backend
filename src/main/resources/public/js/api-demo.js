@@ -241,6 +241,88 @@ async function getDrawResult() {
     await sendRequest("GET", "/draws/" + drawId + "/result");
 }
 
+async function downloadCompletedDrawsCsv() {
+    if (!adminToken) {
+        showLocalMessage(
+            "GET /admin/reports/draws/completed?format=csv",
+            "Admin token не получен. Сначала нажми «Войти как админ»."
+        );
+        return;
+    }
+
+    scrollToResult();
+
+    const requestInfo = document.getElementById("requestInfo");
+    const statusInfo = document.getElementById("statusInfo");
+    const output = document.getElementById("output");
+
+    const endpoint = "/admin/reports/draws/completed?format=csv";
+
+    requestInfo.textContent = "GET " + endpoint;
+    statusInfo.textContent = "loading...";
+    statusInfo.className = "muted";
+    output.textContent = "Запрашиваю CSV-отчёт...";
+
+    try {
+        const response = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+                "Accept": "text/csv",
+                "Authorization": "Bearer " + adminToken
+            }
+        });
+
+        statusInfo.textContent = "status: " + response.status;
+        statusInfo.className = response.ok ? "ok" : "error";
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            output.textContent = errorText;
+            return;
+        }
+
+        const blob = await response.blob();
+
+        const contentDisposition = response.headers.get("Content-Disposition");
+        const filename = extractFilenameFromContentDisposition(contentDisposition)
+            || "completed-draws.csv";
+
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+
+        output.textContent = JSON.stringify({
+            message: "CSV-отчёт скачан",
+            filename: filename
+        }, null, 2);
+    } catch (error) {
+        statusInfo.textContent = "request failed";
+        statusInfo.className = "error";
+        output.textContent = error.message;
+    }
+}
+
+function extractFilenameFromContentDisposition(contentDisposition) {
+    if (!contentDisposition) {
+        return "";
+    }
+
+    const match = contentDisposition.match(/filename="([^"]+)"/);
+
+    if (!match) {
+        return "";
+    }
+
+    return match[1];
+}
+
 async function logoutUser() {
     if (!userToken) {
         showLocalMessage(
