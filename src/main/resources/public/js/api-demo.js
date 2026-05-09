@@ -18,6 +18,12 @@ function updateStateView() {
         document.getElementById("buyTicketDrawId").value = lastDrawId;
         document.getElementById("resultDrawId").value = lastDrawId;
 
+        const buyWithAdminTokenInput = document.getElementById("buyWithAdminTokenDrawId");
+
+        if (buyWithAdminTokenInput) {
+            buyWithAdminTokenInput.value = lastDrawId;
+        }
+
         const buyWithoutTokenInput = document.getElementById("buyWithoutTokenDrawId");
 
         if (buyWithoutTokenInput) {
@@ -295,6 +301,28 @@ async function checkOldAdminToken() {
     }
 
     await sendRequest("GET", "/admin/ping", null, lastLoggedOutAdminToken);
+}
+
+async function buyTicketWithAdminToken() {
+    const drawId = document.getElementById("buyWithAdminTokenDrawId").value;
+
+    if (!drawId) {
+        showLocalMessage(
+            "POST /draws/{id}/tickets",
+            "Сначала укажи drawId или создай тираж через кнопку «Создать тираж»."
+        );
+        return;
+    }
+
+    if (!adminToken) {
+        showLocalMessage(
+            "POST /draws/{id}/tickets",
+            "Admin token не получен. Сначала нажми «Войти как админ»."
+        );
+        return;
+    }
+
+    await sendRequest("POST", "/draws/" + drawId + "/tickets", null, adminToken);
 }
 
 async function buyTicketWithoutToken() {

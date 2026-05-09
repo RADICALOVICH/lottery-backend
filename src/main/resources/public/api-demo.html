@@ -271,6 +271,17 @@
         </div>
 
         <div class="card">
+            <h3>Покупка билета с admin token</h3>
+            <span class="endpoint">POST /draws/{id}/tickets</span>
+            <p>Проверяет, что админ не может покупать билеты. Ожидаемый результат: 403 Forbidden.</p>
+
+            <label for="buyWithAdminTokenDrawId">Draw ID</label>
+            <input id="buyWithAdminTokenDrawId" placeholder="Например: 1">
+
+            <button class="secondary" onclick="buyTicketWithAdminToken()">Купить с admin token</button>
+        </div>
+
+        <div class="card">
             <h3>Покупка билета без токена</h3>
             <span class="endpoint">POST /draws/{id}/tickets</span>
             <p>Проверяет, что купить билет без Authorization нельзя.</p>
