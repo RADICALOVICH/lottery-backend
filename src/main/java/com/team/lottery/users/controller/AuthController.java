@@ -56,7 +56,7 @@ public class AuthController {
         });
 
         routes.post("/auth/login", ctx -> {
-            String successMsg = "User is already logged in";
+            String successMsg = "Login successful";
             String failureMsg = "Invalid login or password";
             LoginRequest request = ctx.bodyAsClass(LoginRequest.class);
 

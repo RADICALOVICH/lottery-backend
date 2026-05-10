@@ -60,7 +60,7 @@ public class PostAuthLoginTest extends BaseTest {
                 .then()
                 .statusCode(200)
                 .contentType(ContentType.JSON)
-                .body("message", equalTo("User is already logged in"))
+                .body("message", equalTo("Login successful"))
                 .body("token", org.hamcrest.Matchers.notNullValue()) // Токен должен быть сгенерирован
                 .body("id", equalTo(1))
                 .body("login", equalTo("alice"))
@@ -163,7 +163,7 @@ public class PostAuthLoginTest extends BaseTest {
         Повторный логин после логаута
         Сценарий: Получение нового токена
         Вход: Логин → логаут → повторный логин alice
-        Ожидаемый результат: Новый JWT токен успешно получен
+        Ожидаемый результат: Новый Bearer-токен успешно получен
         и работает.
         * */
         // 1. Регистрация alice

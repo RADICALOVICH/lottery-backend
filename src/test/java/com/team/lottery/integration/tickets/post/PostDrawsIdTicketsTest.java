@@ -126,7 +126,7 @@ public class PostDrawsIdTicketsTest extends BaseTest {
         /*
         Покупка нескольких билетов одним пользователем
         Сценарий: Пользователь покупает 2 билета в разные тиражи
-        Вход: POST /draws/1/tickets и POST /draws/2/tickets с JWT alice
+        Вход: POST /draws/1/tickets и POST /draws/2/tickets с Bearer-токеном alice
         Ожидаемый результат: 2 билета в /me/tickets
          */
 

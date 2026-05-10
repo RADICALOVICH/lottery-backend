@@ -91,7 +91,7 @@ public class PostAdminDrawsIdRunDrawTest extends BaseTest {
     public void runDrawAsAdmin() {
         /* Проведение розыгрыша (админ)
          * Сценарий: Запуск розыгрыша тиража
-         * Вход: POST /admin/draws/1/run-draw с JWT админа
+         * Вход: POST /admin/draws/1/run-draw с Bearer-токеном админа
          * Ожидаемый результат: 200 OK, DrawResponse status=COMPLETED
          */
 

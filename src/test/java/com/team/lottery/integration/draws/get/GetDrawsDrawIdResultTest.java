@@ -68,27 +68,13 @@ public class GetDrawsDrawIdResultTest extends BaseTest {
 
         given().header("Authorization", "Bearer " + adminToken).post("/admin/draws/1/run-draw");
 
-        // 2. ОТЛАДКА: Проверка БД перед запросом
-        try (var connection = DatabaseConfig.getDataSource().getConnection()) {
-            var resultSet = connection.createStatement().executeQuery("SELECT winning_ticket_id FROM draw_results WHERE draw_id = 1");
-            if (resultSet.next()) {
-                System.out.println("DEBUG: Database winnerTicketId = " + resultSet.getLong("winning_ticket_id"));
-            } else {
-                System.out.println("DEBUG: No draw_result record found in database!");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        // 3. GET запрос на получение результата
+        // 2. GET запрос на получение результата
         Response response = given()
                 .header("Authorization", "Bearer " + userToken)
                 .when()
                 .get(getUrl(1));
 
-        // 4. Проверка результата
-        System.out.println("DEBUG: Response JSON = " + response.getBody().asString());
-
+        // 3. Проверка результата
         response.then()
                 .statusCode(200)
                 .body("drawId", equalTo(1))

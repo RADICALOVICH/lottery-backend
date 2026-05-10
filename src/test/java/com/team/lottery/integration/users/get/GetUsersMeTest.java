@@ -31,7 +31,7 @@ public class GetUsersMeTest extends BaseTest {
          * 1. Регистрируем alice
          * 2. Логинимся, чтобы получить токен
          * 3. Запрашиваем /users/me с токеном
-         *    GET /users/me с JWT токеном alice
+         *    GET /users/me с Bearer-токеном alice
          * Ожидаемый результат: 200 OK, { "id": 1, "login": "alice", "role": "USER" }
          */
 
@@ -63,7 +63,7 @@ public class GetUsersMeTest extends BaseTest {
 
     @Test
     public void getMeWithoutToken() {
-        /* Инфо о пользователе без JWT
+        /* Инфо о пользователе без токена
          * Сценарий: Доступ без авторизации
          * Вход: GET /users/me без токена
          * Ожидаемый результат: 401 Unauthorized

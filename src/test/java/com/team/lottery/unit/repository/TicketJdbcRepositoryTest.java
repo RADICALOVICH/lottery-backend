@@ -201,11 +201,10 @@ class TicketJdbcRepositoryTest extends BaseJdbcDrawRepositoryTest {
         }
 
         // Теперь у всех билетов статус SOLD и ЕСТЬ owner_id.
-        // Выполняем пакетное обновление (например, из SOLD переводим в WINNING, если он есть).
-        // Если статуса WINNING нет, можно обновить SOLD -> SOLD, это все равно успешно
-        // проверит синтаксис SQL-запроса UPDATE в репозитории без падения БД.
+        // Прогоняем no-op UPDATE (SOLD -> SOLD), чтобы убедиться, что SQL-запрос
+        // updateStatusesByDrawIdAndCurrentStatus в репозитории отрабатывает без падения БД.
         TicketStatus currentStatus = TicketStatus.SOLD;
-        TicketStatus newStatus = TicketStatus.SOLD; // Замените на WINNING/COMPLETED, если есть в enum
+        TicketStatus newStatus = TicketStatus.SOLD;
 
         com.team.lottery.common.db.Tx.execute(dataSource, c -> {
             ticketRepository.updateStatusesByDrawIdAndCurrentStatus(c, testDraw.id(), currentStatus, newStatus);

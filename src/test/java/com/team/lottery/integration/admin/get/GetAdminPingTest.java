@@ -70,7 +70,7 @@ public class GetAdminPingTest extends BaseTest {
 
     @Test
     public void adminPingWithoutToken() {
-        /* Пинг админа без JWT
+        /* Пинг админа без токена
          * Сценарий: Отказ без авторизации
          * Вход: GET /admin/ping без токена
          * Ожидаемый результат: 401 Unauthorized

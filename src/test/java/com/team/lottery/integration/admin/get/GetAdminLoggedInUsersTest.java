@@ -31,7 +31,7 @@ public class GetAdminLoggedInUsersTest extends BaseTest {
 
         /* Активные пользователи (запрос от администратора)
           Сценарий: Список залогиненных пользователей
-          Вход: GET /admin/logged-in-users с JWT админа (после логина alice и admin)
+          Вход: GET /admin/logged-in-users с Bearer-токеном админа (после логина alice и admin)
           Ожидаемый результат: Массив с активными сессиями
         */
 
@@ -95,7 +95,7 @@ public class GetAdminLoggedInUsersTest extends BaseTest {
 
         /* Активные пользователи (запрос от пользователя)
           Сценарий: Список залогиненных пользователей
-          Вход: GET /admin/logged-in-users с JWT пользователя (после логина alice и admin)
+          Вход: GET /admin/logged-in-users с Bearer-токеном пользователя (после логина alice и admin)
           Ожидаемый результат: Массив с активными сессиями
         */
 
@@ -160,7 +160,7 @@ public class GetAdminLoggedInUsersTest extends BaseTest {
 
         /* Активные пользователи (запрос от пользователя)
           Сценарий: Список залогиненных пользователей
-          Вход: GET /admin/logged-in-users без JWT пользователя (после логина alice и admin)
+          Вход: GET /admin/logged-in-users без токена (после логина alice и admin)
           Ожидаемый результат: 401
         */
 
