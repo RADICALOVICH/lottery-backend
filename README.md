@@ -225,17 +225,6 @@ stateDiagram-v2
 
 ### Жизненный цикл билета
 
-```mermaid
-stateDiagram-v2
-    [*] --> AVAILABLE: createDraw предгенерирует
-    AVAILABLE --> SOLD: пользователь покупает
-    SOLD --> WIN: розыгрыш — этот билет выиграл
-    SOLD --> LOSE: розыгрыш — не выиграл
-    AVAILABLE --> WIN: розыгрыш — выиграл непроданный (owner_id = null)
-    WIN --> [*]
-    LOSE --> [*]
-```
-
 - **AVAILABLE** — билет сгенерирован вместе с тиражом, никем не куплен.
 - **SOLD** — пользователь купил билет (атомарный переход
   `AVAILABLE → SOLD` с проставлением `owner_id`, защищён `FOR UPDATE SKIP LOCKED`
