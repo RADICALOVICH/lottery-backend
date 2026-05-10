@@ -15,15 +15,15 @@ import com.team.lottery.ticket.model.TicketStatus;
 import com.team.lottery.ticket.repository.TicketRepository;
 
 import javax.sql.DataSource;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Сервис тиражей.
- * <p>
+ *
  * Отвечает за основные сценарии работы с тиражами:
  * - Создание тиража (атомарно: запись в БД + предгенерация билетов в статусе AVAILABLE);
  * - Проведение розыгрыша (CLOSED → COMPLETED, выбор победителя, обновление статусов билетов);
@@ -36,6 +36,7 @@ public class DrawService {
     private final DrawRepository drawRepository;
     private final DrawResultRepository drawResultRepository;
     private final TicketRepository ticketRepository;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     public DrawService(
             DataSource dataSource,
@@ -52,16 +53,12 @@ public class DrawService {
     /**
      * Создаёт новый тираж на основе данных из запроса администратора.
      *
-     * <p>В одной транзакции:
-     * <ul>
-     *  <li>сохраняет тираж через {@code DrawRepository}
-     *      (статус ACTIVE и created_at — дефолты на уровне БД);</li>
-     *  <li>генерирует {@code totalTickets} билетов в статусе AVAILABLE
-     *      с номерами от 1 до N.</li>
-     * </ul>
+     * В одной транзакции:
+     * - сохраняет тираж через DrawRepository со статусом ACTIVE;
+     * - генерирует totalTickets билетов в статусе AVAILABLE с номерами от 1 до N.
      *
-     * <p>Атомарность гарантируется {@link Tx#execute}: либо создаётся тираж
-     * и все его билеты, либо ничего (нет orphan-draw без билетов).
+     * Атомарность гарантируется через Tx.execute: либо создаётся тираж
+     * и все его билеты, либо ничего не сохраняется.
      *
      * @param request входные данные для создания тиража
      * @param adminId идентификатор администратора, который создаёт тираж
@@ -131,7 +128,7 @@ public class DrawService {
             throw new ConflictException("No tickets sold - cannot run draw");
         }
 
-        int winningIndex = ThreadLocalRandom.current().nextInt(allTickets.size());
+        int winningIndex = secureRandom.nextInt(allTickets.size());
         Ticket winningTicket = allTickets.get(winningIndex);
 
         Tx.execute(dataSource, connection -> {
