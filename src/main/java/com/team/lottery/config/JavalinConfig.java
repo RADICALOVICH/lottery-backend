@@ -26,16 +26,14 @@ public final class JavalinConfig {
                 staticFiles.location = Location.CLASSPATH;
             });
 
-            // Необходимо для корректной работы Swagger.
-            // Настройка CORS для сред разработки и тестирования.
+            // Swagger UI (:8090) и api-demo делают кросс-origin запросы к API (:8080).
             config.bundledPlugins.enableCors(cors -> {
                 cors.addRule(it -> {
                     if (!isProd) {
-                        it.anyHost(); // Вне продуктивной среды разрешаем всё для удобства.
+                        it.anyHost();
                     }
                 });
             });
-
 
             config.jsonMapper(new JavalinJackson().updateMapper(mapper -> {
                 mapper.registerModule(new JavaTimeModule());

@@ -398,13 +398,4 @@ JVM, миграции прогоняются автоматически).
 
 ## Swagger
 
-OpenAPI-спека в `swagger/swagger.yaml`. Для просмотра в браузере:
-
-```bash
-docker run --rm -p 8081:8080 \
-  -e SWAGGER_JSON=/spec/swagger.yaml \
-  -v "$PWD/swagger":/spec \
-  swaggerapi/swagger-ui
-```
-
-Открыть `http://localhost:8081/`.
+OpenAPI-спека в `swagger/swagger.yaml`. Swagger UI поднимается автоматически вместе с приложением (`docker compose up`) — открыть `http://localhost:8090/`.

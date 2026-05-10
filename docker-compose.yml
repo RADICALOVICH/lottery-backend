@@ -35,5 +35,17 @@ services:
     ports:
       - "8080:8080"
 
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: lottery-swagger
+    depends_on:
+      - app
+    environment:
+      SWAGGER_JSON: /spec/swagger.yaml
+    volumes:
+      - ./swagger:/spec
+    ports:
+      - "8090:8080"
+
 volumes:
   lottery_pgdata:
