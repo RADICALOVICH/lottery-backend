@@ -5,12 +5,25 @@
 
 ---
 
+## Команда 21
+
+- Полубояров Валерий
+- Кондратьев Алексей
+- Костин Марк
+- Беликов Иван
+- Курындин Владимир
+- Граблевский Михаил
+
+---
+
 ## Реализованный сценарий
 
 **Сценарий 1 — базовая лотерея.** Все обязательные функции:
 
-- Аутентификация пользователей (USER / ADMIN), сессии через токены.
-- Создание тиражей администратором (билеты пред-генерируются в статусе `AVAILABLE`).
+- Аутентификация пользователей (USER / ADMIN), сессии через Bearer-токены
+  (UUID, хранятся in-memory в процессе приложения).
+- Создание тиражей администратором (билеты пред-генерируются в статусе
+  `AVAILABLE`).
 - Получение списка активных тиражей (`GET /draws?status=ACTIVE`).
 - Покупка билетов пользователем (`POST /draws/{id}/tickets`).
   ADMIN покупать билеты не может — намеренное ограничение, чтобы исключить
@@ -31,7 +44,7 @@
 ## Стек
 
 - **Java 17** (toolchain в Gradle)
-- **Gradle 9.3** + Shadow plugin 9.4 (fat-jar)
+- **Gradle Wrapper** + Shadow plugin (fat-jar)
 - **Javalin 7.1** — HTTP-сервер. Без Spring / Spring Boot, как требует ТЗ.
 - **PostgreSQL 16** + native ENUM-типы (`user_role`, `draw_status`, `ticket_status`)
 - **HikariCP 7** — пул соединений
@@ -39,6 +52,7 @@
 - **Jackson 2.21** — JSON и CSV (для отчётов)
 - **JBCrypt 0.4** — хеширование паролей
 - **JDBC-only**, без ORM. Все запросы — `PreparedStatement` руками.
+- **Bearer-токены — UUID, in-memory** (`ConcurrentHashMap` в `TokenService`).
 - Тесты: JUnit 5, AssertJ, Mockito, **Testcontainers**, REST Assured
 
 ---
@@ -73,12 +87,38 @@ docker compose down -v
 
 ---
 
+## Демо-стенд в браузере
+
+После старта приложения по адресу `http://localhost:8080/api-demo.html`
+доступна интерактивная HTML-страница: можно прокликать весь сценарий,
+не подымая Postman / curl.
+
+Покрыто на стенде:
+
+- **Happy path:** логин админа → создание тиража → регистрация и логин
+  пользователя → покупка билета → закрытие тиража → розыгрыш → результаты →
+  отчёт (JSON и CSV).
+- **Негативные сценарии:** logout → старый токен возвращает 401, USER в
+  admin-ручке возвращает 403, ADMIN пытается купить билет → 403, покупка
+  без `Authorization` → 401.
+
+Статика лежит в `src/main/resources/public/`:
+
+```
+public/
+├── api-demo.html
+├── css/api-demo.css
+└── js/api-demo.js
+```
+
+---
+
 ## Переменные окружения
 
 Все параметры имеют дефолты в `src/main/resources/application.properties` и
-перекрываются ENV. Для запуска через `docker compose` все значения уже
-проставлены в `docker-compose.yml` — таблица ниже нужна, только если
-запускаете приложение вне Docker.
+перекрываются ENV. **Для запуска через `docker compose` все значения уже
+проставлены в `docker-compose.yml`** (см. `services.app.environment`) — таблица
+ниже нужна, только если запускаете приложение вне Docker.
 
 | ENV | Назначение | Дефолт (без Docker) |
 |---|---|---|
@@ -88,7 +128,7 @@ docker compose down -v
 | `DB_PASSWORD` | Пароль БД | `lottery_dev_password` |
 | `DB_POOL_SIZE` | Размер пула Hikari | `10` |
 | `BCRYPT_COST` | Стоимость BCrypt | `12` |
-| `DRAW_SCHEDULER_INTERVAL_SECONDS` | Период опроса просроченных draw'ов | `30` |
+| `DRAW_SCHEDULER_INTERVAL_SECONDS` | Период опроса просроченных тиражей | `30` |
 
 `DB_URL` указывает на `localhost:5433` именно для локального запуска без
 Docker — порт 5433 проброшен с контейнера `db` на хост, чтобы не
@@ -100,8 +140,8 @@ Docker — порт 5433 проброшен с контейнера `db` на х
 
 ## Архитектура
 
-Package-by-feature: фичи `users`, `draws`, `ticket` лежат в своих пакетах со
-всеми слоями. Общая инфраструктура — в `common/` и `config/`.
+Package-by-feature: фичи `users`, `draws`, `ticket`, `reports` лежат в своих
+пакетах со всеми слоями. Общая инфраструктура — в `common/` и `config/`.
 
 ```
 src/main/java/com/team/lottery/
@@ -114,6 +154,7 @@ src/main/java/com/team/lottery/
 │   ├── errors/                    ← ApiException + 5 наследников + ErrorHandler
 │   ├── validation/Validators.java ← примитивы (notBlank, minLen, ...)
 │   ├── db/Tx.java                 ← хелпер для транзакций (Tx.execute)
+│   ├── web/RequestParams.java     ← парсинг path/query
 │   └── health/HealthController.java
 ├── users/
 │   ├── controller/ (AuthController, UserController)
@@ -165,43 +206,44 @@ tickets       (id, draw_id → draws.id, owner_id → users.id, ticket_number,
 draw_results  (id, draw_id → draws.id UNIQUE, winning_ticket_id → tickets.id, drawn_at)
 ```
 
-**Жизненный цикл тиража:**
-```
-ACTIVE   ─(end_date passed, scheduler)─►  CLOSED   ─(admin POST run-draw)─►  COMPLETED
+### Жизненный цикл тиража
+
+```mermaid
+stateDiagram-v2
+    [*] --> ACTIVE: admin POST /admin/draws
+    ACTIVE --> CLOSED: end_date истёк (scheduler)
+    CLOSED --> COMPLETED: admin POST /admin/draws/{id}/run-draw
+    COMPLETED --> [*]
 ```
 
 - **ACTIVE** — тираж создан администратором. Билеты пред-сгенерированы в
-  статусе AVAILABLE, пользователи могут их покупать.
+  статусе `AVAILABLE`, пользователи могут их покупать.
 - **CLOSED** — наступила `end_date`, шедулер автоматически закрыл продажу.
   Купить новый билет уже нельзя; тираж ждёт явного запуска розыгрыша.
-- **COMPLETED** — администратор провёл розыгрыш через
-  `POST /admin/draws/{id}/run-draw`. Победитель определён, статусы билетов
-  обновлены, в `draw_results` записан выигрышный билет.
+- **COMPLETED** — администратор провёл розыгрыш. Победитель определён,
+  статусы билетов обновлены, в `draw_results` записан выигрышный билет.
 
-Шедулер только закрывает продажу — розыгрыш всегда инициируется админом
-вручную через API. Это даёт админу контроль над моментом проведения
-розыгрыша после закрытия (например, разобраться со спорными покупками).
+### Жизненный цикл билета
 
-**Жизненный цикл билета:**
-```
-AVAILABLE  ─(пользователь покупает)─►  SOLD  ─(розыгрыш)─►  WIN | LOSE
-                                                  ▲
-                                  AVAILABLE  ─────┘ (если победил непроданный — статус WIN с null owner_id)
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE: createDraw предгенерирует
+    AVAILABLE --> SOLD: пользователь покупает
+    SOLD --> WIN: розыгрыш — этот билет выиграл
+    SOLD --> LOSE: розыгрыш — не выиграл
+    AVAILABLE --> WIN: розыгрыш — выиграл непроданный (owner_id = null)
+    WIN --> [*]
+    LOSE --> [*]
 ```
 
 - **AVAILABLE** — билет сгенерирован вместе с тиражом, никем не куплен.
 - **SOLD** — пользователь купил билет (атомарный переход
   `AVAILABLE → SOLD` с проставлением `owner_id`, защищён `FOR UPDATE SKIP LOCKED`
   от двойной покупки).
-- **WIN** — на этот билет выпал выигрыш при розыгрыше.
-- **LOSE** — билет был SOLD, но не выиграл; после розыгрыша становится LOSE.
-
-**Розыгрыш проводится среди ВСЕХ билетов тиража, включая непроданные.**
-Это сознательное правило лотереи: победителем может стать билет в статусе
-AVAILABLE — тогда он переходит в WIN с `owner_id = null`. Запретить
-розыгрыш можно только когда **ни один** билет в тираже не куплен (тогда
-вернётся 409). Если хотя бы один SOLD есть — розыгрыш идёт, и победитель
-выбирается случайно из всего пула.
+- **WIN** — на этот билет выпал выигрыш при розыгрыше. Если победил
+  непроданный билет (правило лотереи допускает) — `owner_id = null`.
+- **LOSE** — билет был `SOLD`, но не выиграл; после розыгрыша становится
+  `LOSE`.
 
 ---
 
@@ -234,11 +276,26 @@ AVAILABLE — тогда он переходит в WIN с `owner_id = null`. З
 | Метод | Путь | Описание |
 |---|---|---|
 | `POST` | `/admin/draws` | создать тираж |
-| `POST` | `/admin/draws/{id}/run-draw` | провести розыгрыш (только для CLOSED) |
+| `POST` | `/admin/draws/{id}/run-draw` | провести розыгрыш (только для CLOSED, см. правило ниже) |
 | `GET` | `/admin/reports/draws/completed` | отчёт по завершённым тиражам (`?format=json\|csv`, дефолт `json`) |
 | `GET` | `/users` | список всех пользователей |
 | `GET` | `/admin/ping` | проверка прав админа |
 | `GET` | `/admin/logged-in-users` | активные сессии |
+
+**Правило розыгрыша.** Победитель выбирается случайно среди **всех билетов
+тиража**, включая непроданные. Если победил непроданный билет — он
+переходит в `WIN` с `owner_id = null` (правило лотереи это допускает).
+Розыгрыш блокируется (`409 CONFLICT`) только когда ни один билет в тираже
+не куплен.
+
+Любая ошибка возвращается единым форматом:
+
+```json
+{ "code": "VALIDATION_FAILED", "message": "endDate must not be in the past" }
+```
+
+Возможные коды: `VALIDATION_FAILED` (400), `UNAUTHORIZED` (401),
+`FORBIDDEN` (403), `NOT_FOUND` (404), `CONFLICT` (409).
 
 ---
 
@@ -250,7 +307,7 @@ curl -X POST http://localhost:8080/auth/login \
      -H 'Content-Type: application/json' \
      -d '{"login":"admin","password":"admin123"}'
 # 200 OK
-# {"login":"admin","id":1,"token":"<UUID>","role":"ADMIN","message":"..."}
+# {"login":"admin","id":1,"token":"<UUID>","role":"ADMIN","message":"Login successful"}
 ```
 
 ### 2. Регистрация и логин пользователя
@@ -321,8 +378,6 @@ curl -OJ http://localhost:8080/admin/reports/draws/completed?format=csv \
 Поля `winnerUserId` / `winnerLogin` могут быть `null`, если победил
 непроданный билет (правило лотереи допускает).
 
-В `TestApi/` лежат `.http` файлы для прогона из IntelliJ.
-
 ---
 
 ## Тесты
@@ -348,25 +403,6 @@ JVM, миграции прогоняются автоматически).
 ```bash
 ./gradlew test jacocoTestReport
 # build/reports/jacoco/test/html/index.html
-```
-
----
-
-## Демо-стенд в браузере
-
-После старта приложения по адресу `http://localhost:8080/api-demo.html`
-доступна интерактивная HTML-страница: можно прокликать весь сценарий
-(логин админа → создание тиража → регистрация и логин пользователя →
-покупка билета → закрытие тиража → розыгрыш → результаты → отчёт),
-не подымая Postman / curl.
-
-Статика лежит в `src/main/resources/public/`:
-
-```
-public/
-├── api-demo.html
-├── css/api-demo.css
-└── js/api-demo.js
 ```
 
 ---
